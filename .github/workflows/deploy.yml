@@ -31,8 +31,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
-      # - name: Run pipeline
-      #   run: uv run kedro run
+      - name: Run pipeline
+        run: uv run kedro run
 
       - name: Build Kedro-Viz site
         run: |
