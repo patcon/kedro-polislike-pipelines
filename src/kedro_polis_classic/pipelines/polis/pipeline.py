@@ -8,7 +8,9 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(make_raw_vote_matrix, inputs="deduped_votes", outputs="raw_vote_matrix", name="make_raw_matrix"),
         node(filter_participants, inputs=["raw_vote_matrix", "params:min_votes_threshold"], outputs="participant_filter_mask", name="filter_participants"),
         node(filter_statements, inputs="raw_comments", outputs="statement_filter_mask", name="filter_statements"),
-        #node(apply_mask, inputs=["raw_vote_matrix", "params:mask"], outputs="masked_vote_matrix", name="mask_matrix"),
-        #node(run_pca, inputs="masked_vote_matrix", outputs="participant_projections", name="run_pca"),
+        node(create_filtered_vote_matrix, inputs=["raw_vote_matrix", "participant_filter_mask", "statement_filter_mask"], outputs="filtered_vote_matrix", name="create_filtered_matrix"),
+        node(create_vote_heatmap, inputs="filtered_vote_matrix", outputs="vote_heatmap_fig", name="create_heatmap"),
+        node(save_heatmap_html, inputs="vote_heatmap_fig", outputs="heatmap_filepath", name="save_heatmap"),
+        #node(run_pca, inputs="filtered_vote_matrix", outputs="participant_projections", name="run_pca"),
         #node(cluster_kmeans, inputs="participant_projections", outputs="labels", name="kmeans_cluster"),
     ])
