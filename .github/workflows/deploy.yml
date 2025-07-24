@@ -31,6 +31,11 @@ jobs:
       - name: Fetch the repository
         uses: actions/checkout@v4
 
+      - name: Install lxml build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-dev libxslt-dev
+
       - name: "Set up Python"
         uses: actions/setup-python@v5
         with:
@@ -44,7 +49,7 @@ jobs:
           uv run kedro viz build
 
       - name: Upload static files as artifact
-        uses: actions/upload-pages-artifact@v3 # or specific "vX.X.X" version tag for this action
+        uses: actions/upload-pages-artifact@v3
         with:
           path: build/
 
