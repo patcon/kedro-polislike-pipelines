@@ -1,0 +1,33 @@
+raw_data:
+  type: kedro_polis_classic.datasets.polis_api.PolisAPIDataset
+  report_id: r2dfw8eambusb8buvecjt
+
+votes:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/votes.csv
+  save_args:
+    index: false
+
+comments:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/comments.csv
+  save_args:
+    index: false
+
+raw_vote_matrix:
+  type: pandas.CSVDataset
+  filepath: data/03_primary/raw_vote_matrix.csv
+  save_args:
+    index: true
+
+masked_vote_matrix:
+  type: MemoryDataset
+
+participant_projections:
+  type: MemoryDataset
+
+clusterable_mask:
+  type: MemoryDataset
+
+labels:
+  type: MemoryDataset
