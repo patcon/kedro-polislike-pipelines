@@ -23,6 +23,9 @@ raw_vote_matrix:
   save_args:
     index: true
 
+participant_filter_mask:
+  type: MemoryDataset
+
 masked_vote_matrix:
   type: MemoryDataset
 
