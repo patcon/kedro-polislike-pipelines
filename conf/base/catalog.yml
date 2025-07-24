@@ -1,6 +1,6 @@
-raw_data:
-  type: kedro_polis_classic.datasets.polis_api.PolisAPIDataset
-  report_id: r2dfw8eambusb8buvecjt
+# raw_data:
+#   type: kedro_polis_classic.datasets.polis_api.PolisAPIDataset
+#   report_id: null
 
 raw_votes:
   type: pandas.CSVDataset
@@ -42,7 +42,8 @@ filtered_vote_matrix:
     index: true
 
 vote_heatmap_fig:
-  type: MemoryDataset
+  type: plotly.JSONDataset
+  filepath: data/08_reporting/vote_heatmap.json
 
 heatmap_filepath:
   type: MemoryDataset

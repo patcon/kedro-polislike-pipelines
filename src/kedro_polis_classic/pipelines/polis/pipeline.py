@@ -3,6 +3,7 @@ from .nodes import *
 
 def create_pipeline(**kwargs) -> Pipeline:
     return pipeline([
+        node(load_polis_data, inputs="params:report_id", outputs="raw_data", name="load_polis_data"),
         node(split_raw_data, inputs="raw_data", outputs=["raw_votes", "raw_comments"], name="split_raw_data"),
         node(dedup_votes, inputs="raw_votes", outputs="deduped_votes", name="dedup_votes"),
         node(make_raw_vote_matrix, inputs="deduped_votes", outputs="raw_vote_matrix", name="make_raw_matrix"),

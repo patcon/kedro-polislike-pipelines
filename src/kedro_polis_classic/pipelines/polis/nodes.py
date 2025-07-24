@@ -4,6 +4,12 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 import plotly.graph_objects as go
 import plotly.express as px
+from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
+
+
+def load_polis_data(report_id: str):
+    dataset = PolisAPIDataset(report_id=report_id)
+    return dataset.load()
 
 def split_raw_data(raw_data: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
     return raw_data["votes"], raw_data["comments"]
@@ -105,18 +111,22 @@ def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
 
     # Create custom colorscale (matching Polis website)
     # NaN's are handled below as background color.
-    colorscale = [
+    polisColorScale = [
         [0.0, '#e74c3c'],    # Red for -1
         [0.5, '#e6e6e6'],    # White for 0
         [1.0, '#2ecc71']     # Green for +1
     ]
 
+    # Same colorscale used in CompDem analysis notebooks
+    # See: https://github.com/compdemocracy/analysis/blob/acc27dca89a37f8690e32dbd40aa8bc5ebfa851c/notebooks/jupyter/american-assembly-bg-analysis.heatmap.v0.6.ipynb
+    analysisColorScale = px.colors.diverging.RdYlBu
+
     # Create the base heatmap
     fig = go.Figure(data=go.Heatmap(
         z=display_matrix.values,
-        x=[f"Statement {col}" for col in display_matrix.columns],
-        y=[f"Participant {idx}" for idx in display_matrix.index],
-        colorscale=colorscale,
+        x=[f"{col}" for col in display_matrix.columns],
+        y=[f"{idx}" for idx in display_matrix.index],
+        colorscale=analysisColorScale,
         zmin=-1,
         zmid=0,
         zmax=1,
@@ -139,7 +149,6 @@ def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
         height=max(600, len(display_matrix.index) * 15),
         # xaxis=dict(tickangle=45),
         font=dict(size=10),
-        # Show missing votes as white
         plot_bgcolor='white',
     )
 

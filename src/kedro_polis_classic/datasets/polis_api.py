@@ -1,14 +1,12 @@
 import pandas as pd
 from kedro.io import AbstractDataset
 from typing import Dict
-import requests
-from io import StringIO
 
 class PolisAPIDataset(AbstractDataset):
     def __init__(self, report_id: str):
         self.report_id = report_id
 
-    def _load(self) -> Dict[str, pd.DataFrame]:
+    def load(self) -> Dict[str, pd.DataFrame]:
         base = f"https://pol.is/api/v3/reportExport/{self.report_id}"
         comments_url = f"{base}/comments.csv"
         votes_url = f"{base}/votes.csv"
@@ -18,7 +16,7 @@ class PolisAPIDataset(AbstractDataset):
 
         return {"comments": comments, "votes": votes}
 
-    def _save(self, data: Dict[str, pd.DataFrame]) -> None:
+    def save(self, data: Dict[str, pd.DataFrame]) -> None:
         raise NotImplementedError("Saving to Polis API is not supported.")
 
     def _describe(self) -> dict:
