@@ -1,0 +1,18 @@
+[project]
+name = "kedro-polis-classic"
+version = "0.1.0"
+authors = [
+    { name = "Patrick Connolly", email = "patrick.c.connolly@gmail.com" }
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.kedro]
+package_name = "kedro-polis-classic"
+project_name = "kedro-polis-classic"
+kedro_init_version = "0.19.9"
+source_dir = "."
