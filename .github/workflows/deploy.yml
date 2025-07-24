@@ -4,27 +4,14 @@
 # The name of your workflow
 name: Publish and share Kedro Viz 
 
-permissions:
-    
-  # The contents write permission is required to use the action 
-  # if your GitHub publishing source is a branch
-  contents: write 
-  
-  # The pages and id-token write permissions are required to use 
-  # the action if your GitHub publishing source is a custom 
-  # GitHub Actions workflow
-  pages: write 
-  id-token: write
-
 on: 
   push:
     branches:
       - main
   workflow_dispatch:
 
-# We mentioned the minimal jobs for the workflow
 jobs: 
-  deploy:
+  build:
     # The action is currently tested on ubuntu-latest (Recommended)
     runs-on: ubuntu-latest 
     steps:
@@ -52,6 +39,23 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/
+  
+  deploy:
+    needs: build
+    permissions:
+      # The pages and id-token write permissions are required to use 
+      # the action if your GitHub publishing source is a custom 
+      # GitHub Actions workflow
+      pages: write 
+      id-token: write
 
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
