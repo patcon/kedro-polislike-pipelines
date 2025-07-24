@@ -2,17 +2,20 @@ raw_data:
   type: kedro_polis_classic.datasets.polis_api.PolisAPIDataset
   report_id: r2dfw8eambusb8buvecjt
 
-votes:
+raw_votes:
   type: pandas.CSVDataset
   filepath: data/01_raw/votes.csv
   save_args:
     index: false
 
-comments:
+raw_comments:
   type: pandas.CSVDataset
   filepath: data/01_raw/comments.csv
   save_args:
     index: false
+
+deduped_votes:
+  type: MemoryDataset
 
 raw_vote_matrix:
   type: pandas.CSVDataset

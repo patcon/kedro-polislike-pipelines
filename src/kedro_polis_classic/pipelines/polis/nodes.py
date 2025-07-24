@@ -6,21 +6,23 @@ from sklearn.cluster import KMeans
 def split_raw_data(raw_data: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
     return raw_data["votes"], raw_data["comments"]
 
-def make_raw_vote_matrix(votes: pd.DataFrame) -> pd.DataFrame:
+def dedup_votes(raw_votes: pd.DataFrame) -> pd.DataFrame:
     # 1. Sort so newest votes are last
-    votes_sorted = votes.sort_values("timestamp")
+    votes_sorted = raw_votes.sort_values("timestamp")
 
     # 2. Drop duplicates, keeping the most recent
     deduped_votes = votes_sorted.drop_duplicates(
         subset=["voter-id", "comment-id"], keep="last"
     )
 
-    # 3. Pivot to wide matrix format
+    return deduped_votes
+
+def make_raw_vote_matrix(deduped_votes: pd.DataFrame) -> pd.DataFrame:
     matrix = deduped_votes.pivot(
         index="voter-id",
         columns="comment-id",
         values="vote"
-    ).fillna(0)
+    )
 
     return matrix
 
