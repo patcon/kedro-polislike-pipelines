@@ -29,6 +29,10 @@ def make_raw_vote_matrix(deduped_votes: pd.DataFrame) -> pd.DataFrame:
 def filter_participants(matrix: pd.DataFrame, min_votes: int = 7) -> pd.Series:
     return matrix.abs().sum(axis=1) >= min_votes
 
+def filter_statements(comments: pd.DataFrame) -> pd.Series:
+    """Create a mask to filter out moderated statements (moderated = -1)"""
+    return comments["moderated"] != -1
+
 def apply_mask(matrix: pd.DataFrame, mask: pd.Series) -> pd.DataFrame:
     return matrix.loc[:, mask]
 

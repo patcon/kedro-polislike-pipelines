@@ -26,6 +26,9 @@ raw_vote_matrix:
 participant_filter_mask:
   type: MemoryDataset
 
+statement_filter_mask:
+  type: MemoryDataset
+
 masked_vote_matrix:
   type: MemoryDataset
 
