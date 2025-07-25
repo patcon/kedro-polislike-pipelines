@@ -1,11 +1,63 @@
 import pandas as pd
-import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 import plotly.graph_objects as go
 import plotly.express as px
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
 
+# Helpers
+
+import functools
+import inspect
+
+def process_series(x: pd.Series | pd.DataFrame) -> pd.Series:
+    """Ensure x is a pandas Series (e.g., extract first column of a single-column DataFrame)."""
+    if isinstance(x, pd.DataFrame):
+        if x.shape[1] != 1:
+            raise ValueError("Expected a single-column DataFrame")
+        return x.iloc[:, 0]
+    elif isinstance(x, pd.Series):
+        return x
+    else:
+        raise TypeError("Expected Series or single-column DataFrame")
+
+
+def ensure_series(argname: str):
+    """Decorator to apply `process_series` to a named argument."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # Bind args and kwargs to named parameters
+            sig = inspect.signature(func)
+            bound = sig.bind(*args, **kwargs)
+            bound.apply_defaults()
+
+            if argname not in bound.arguments:
+                raise ValueError(f"Argument '{argname}' not found when calling {func.__name__}")
+
+            bound.arguments[argname] = process_series(bound.arguments[argname])
+            return func(*bound.args, **bound.kwargs)
+
+        return wrapper
+    return decorator
+
+@ensure_series('statement_mask')
+def apply_statement_filter(matrix: pd.DataFrame, statement_mask: pd.Series) -> pd.DataFrame:
+    """Filter out moderated statements from the vote matrix"""
+    # Filter to only statements that are True in the mask
+    unfiltered_statement_ids = statement_mask.loc[statement_mask].index
+    # Convert to strings as more universal type.
+    # NOTE: Are the any circumstances where `matrix` might still have numeric column names?
+    return matrix.loc[:, unfiltered_statement_ids.astype(str)]
+
+@ensure_series('participant_mask')
+def apply_participant_filter(matrix: pd.DataFrame, participant_mask: pd.Series) -> pd.DataFrame:
+    """Filter out participants who don't meet the minimum vote threshold"""
+    # Filter to only participants that are True in the mask
+    unfiltered_participant_ids = participant_mask.loc[participant_mask].index
+    return matrix.loc[unfiltered_participant_ids, :]
+
+# Nodes
 
 def load_polis_data(report_id: str):
     dataset = PolisAPIDataset(report_id=report_id)
@@ -34,46 +86,24 @@ def make_raw_vote_matrix(deduped_votes: pd.DataFrame) -> pd.DataFrame:
 
     return matrix
 
-def filter_participants(matrix: pd.DataFrame, min_votes: int = 7) -> pd.Series:
+def make_participant_mask(matrix: pd.DataFrame, min_votes: int = 7) -> pd.Series:
     mask = matrix.count(axis="columns") >= min_votes
+
     mask.index.name = "voter-id"
-    mask.name = "meets-threshold"
+    mask.name = "participant-in" # sample-in
     return mask
 
-def filter_statements(comments: pd.DataFrame) -> pd.Series:
-    """Create a mask to filter out moderated statements (moderated = -1)"""
-    # TODO: Make this adjustable based on conversation.
-    IS_STRICT_MODERATION = True
-    
-    moderation_cutoff = 0 if IS_STRICT_MODERATION else -1
-    mask = comments["moderated"] > moderation_cutoff
-    # Set the index to comment-id so it aligns with vote matrix columns
-    mask.index = comments["comment-id"]
-    mask.name = "mod-in"
+def make_statement_mask(comments: pd.DataFrame, strict_moderation: bool = True) -> pd.Series:
+    """Return a mask for unmoderated statements.
+
+    If `strict_moderation=True`, only keep comments explicitly moderated in (`moderated=1`).
+    If `strict_moderation=False`, allow unmoderated (`moderated=0`).
+    """
+    threshold = 1 if strict_moderation else 0
+    mask = comments["moderated"] >= threshold
+
+    mask.name = "statement-in" # feature-in
     return mask
-
-def apply_statement_filter(matrix: pd.DataFrame, statement_mask: pd.Series) -> pd.DataFrame:
-    """Filter out moderated statements from the vote matrix"""
-    # Convert DataFrame to Series if needed (when loaded from CSV)
-    if isinstance(statement_mask, pd.DataFrame):
-        statement_mask = statement_mask.set_index(statement_mask.columns[0]).iloc[:, 0]
-
-    matrix.set_index("voter-id", inplace=True)
-    # Only keep comment IDs where the mask is True (not moderated)
-    string_statement_ids = [str(i) for i in statement_mask.index if statement_mask[i]]
-    common_comment_ids = matrix.columns.intersection(string_statement_ids)
-    return matrix.loc[:, common_comment_ids]
-
-def apply_participant_filter(matrix: pd.DataFrame, participant_mask: pd.Series) -> pd.DataFrame:
-    """Filter out participants who don't meet the minimum vote threshold"""
-    # Convert DataFrame to Series if needed (when loaded from CSV)
-    if isinstance(participant_mask, pd.DataFrame):
-        # Set the first column as index and take the second column as the series
-        participant_mask = participant_mask.set_index(participant_mask.columns[0]).iloc[:, 0]
-
-    # Filter to only participants that are True in the mask
-    # Use .loc with boolean indexing on rows
-    return matrix.loc[participant_mask]
 
 def create_filtered_vote_matrix(
     raw_vote_matrix: pd.DataFrame,
@@ -109,7 +139,6 @@ def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
 
     # Create a copy of the matrix for display
     display_matrix = filtered_matrix.copy()
-    display_matrix.set_index("voter-id", inplace=True)
     display_matrix.sort_index(inplace=True, ascending=False)
 
     # Create custom colorscale (matching Polis website)
