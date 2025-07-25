@@ -42,8 +42,11 @@ def filter_participants(matrix: pd.DataFrame, min_votes: int = 7) -> pd.Series:
 
 def filter_statements(comments: pd.DataFrame) -> pd.Series:
     """Create a mask to filter out moderated statements (moderated = -1)"""
-    # Create a mask indexed by comment-id (which matches the vote matrix columns)
-    mask = comments["moderated"] > -1
+    # TODO: Make this adjustable based on conversation.
+    IS_STRICT_MODERATION = True
+    
+    moderation_cutoff = 0 if IS_STRICT_MODERATION else -1
+    mask = comments["moderated"] > moderation_cutoff
     # Set the index to comment-id so it aligns with vote matrix columns
     mask.index = comments["comment-id"]
     mask.name = "mod-in"
