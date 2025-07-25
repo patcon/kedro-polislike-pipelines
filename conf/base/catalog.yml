@@ -13,6 +13,8 @@ raw_comments:
   filepath: data/01_raw/comments.csv
   save_args:
     index: false
+  load_args:
+    index_col: comment-id
 
 deduped_votes:
   type: MemoryDataset
@@ -22,6 +24,8 @@ raw_vote_matrix:
   filepath: data/03_primary/raw_vote_matrix.csv
   save_args:
     index: true
+  load_args:
+    index_col: voter-id
   metadata:
     kedro-viz:
       preview_args:
@@ -32,18 +36,24 @@ participant_filter_mask:
   filepath: data/02_intermediate/participant_filter_mask.csv
   save_args:
     index: true
+  load_args:
+    index_col: voter-id
 
 statement_filter_mask:
   type: pandas.CSVDataset
   filepath: data/02_intermediate/statement_filter_mask.csv
   save_args:
     index: true
+  load_args:
+    index_col: comment-id
 
 filtered_vote_matrix:
   type: pandas.CSVDataset
   filepath: data/03_primary/filtered_vote_matrix.csv
   save_args:
     index: true
+  load_args:
+    index_col: voter-id
   metadata:
     kedro-viz:
       preview_args:
