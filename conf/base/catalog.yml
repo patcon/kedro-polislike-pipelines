@@ -22,6 +22,10 @@ raw_vote_matrix:
   filepath: data/03_primary/raw_vote_matrix.csv
   save_args:
     index: true
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 10
 
 participant_filter_mask:
   type: pandas.CSVDataset
@@ -40,6 +44,10 @@ filtered_vote_matrix:
   filepath: data/03_primary/filtered_vote_matrix.csv
   save_args:
     index: true
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 10
 
 vote_heatmap_fig:
   type: plotly.JSONDataset
