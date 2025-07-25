@@ -59,8 +59,8 @@ def apply_statement_filter(matrix: pd.DataFrame, statement_mask: pd.Series) -> p
         statement_mask = statement_mask.set_index(statement_mask.columns[0]).iloc[:, 0]
 
     matrix.set_index("voter-id", inplace=True)
-    # Only keep comment IDs that exist in both the matrix and the mask
-    string_statement_ids = [str(i) for i in statement_mask.index]
+    # Only keep comment IDs where the mask is True (not moderated)
+    string_statement_ids = [str(i) for i in statement_mask.index if statement_mask[i]]
     common_comment_ids = matrix.columns.intersection(string_statement_ids)
     return matrix.loc[:, common_comment_ids]
 
