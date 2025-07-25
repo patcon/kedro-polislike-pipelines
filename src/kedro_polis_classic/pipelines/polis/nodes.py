@@ -1,6 +1,6 @@
 import pandas as pd
-from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans
+# from sklearn.decomposition import PCA
+# from sklearn.cluster import KMeans
 import plotly.graph_objects as go
 import plotly.express as px
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
@@ -86,14 +86,14 @@ def create_filtered_vote_matrix(
 
     return raw_vote_matrix
 
-def run_pca(matrix: pd.DataFrame, n_components: int = 2) -> pd.DataFrame:
-    pca = PCA(n_components=n_components)
-    components = pca.fit_transform(matrix)
-    return pd.DataFrame(components, index=matrix.index, columns=["x", "y"])
+# def run_pca(matrix: pd.DataFrame, n_components: int = 2) -> pd.DataFrame:
+#     pca = PCA(n_components=n_components)
+#     components = pca.fit_transform(matrix)
+#     return pd.DataFrame(components, index=matrix.index, columns=["x", "y"])
 
-def cluster_kmeans(matrix: pd.DataFrame, n_clusters: int = 4) -> pd.Series:
-    kmeans = KMeans(n_clusters=n_clusters, n_init="auto").fit(matrix)
-    return pd.Series(kmeans.labels_, index=matrix.index)
+# def cluster_kmeans(matrix: pd.DataFrame, n_clusters: int = 4) -> pd.Series:
+#     kmeans = KMeans(n_clusters=n_clusters, n_init="auto").fit(matrix)
+#     return pd.Series(kmeans.labels_, index=matrix.index)
 
 def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
     """
@@ -110,7 +110,7 @@ def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
 
     # Create custom colorscale (matching Polis website)
     # NaN's are handled below as background color.
-    polisColorScale = [
+    polisColorScale = [  # noqa: F841
         [0.0, '#e74c3c'],    # Red for -1
         [0.5, '#e6e6e6'],    # White for 0
         [1.0, '#2ecc71']     # Green for +1
