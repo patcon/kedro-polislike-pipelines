@@ -2,7 +2,7 @@ from kedro_datasets.pandas.csv_dataset import CSVDataset, TablePreview
 import pandas as pd
 
 class CustomCSVDataset(CSVDataset):
-    def preview(self, nrows: int = 5) -> TablePreview:
+    def preview(self, nrows: int = 10) -> TablePreview:
         """
         Generate a preview of the dataset with a specified number of rows.
 
