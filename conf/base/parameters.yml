@@ -1,7 +1,6 @@
 strict_moderation: false
 report_id: r2dfw8eambusb8buvecjt # small for tests
 # report_id: r2xcn2cdbmrzjmmuuytdk # American Assembly Bowling Green 2018
-mask: null
 min_votes_threshold: 7
 
 # PCA Subpipeline Parameters
