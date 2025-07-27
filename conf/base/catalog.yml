@@ -29,7 +29,7 @@ raw_vote_matrix:
   metadata:
     kedro-viz:
       preview_args:
-        nrows: 10
+        nrows: ${_preview_args.nrows}
 
 participant_filter_mask:
   type: pandas.CSVDataset
@@ -57,7 +57,7 @@ filtered_vote_matrix:
   metadata:
     kedro-viz:
       preview_args:
-        nrows: 10
+        nrows: ${_preview_args.nrows}
 
 vote_heatmap_fig:
   type: plotly.JSONDataset
@@ -77,7 +77,7 @@ imputed_vote_matrix:
   metadata:
     kedro-viz:
       preview_args:
-        nrows: 10
+        nrows: ${_preview_args.nrows}
 
 pca_components:
   type: pandas.CSVDataset
@@ -89,7 +89,7 @@ pca_components:
   metadata:
     kedro-viz:
       preview_args:
-        nrows: 10
+        nrows: ${_preview_args.nrows}
 
 scaled_pca_components:
   type: pandas.CSVDataset
@@ -101,7 +101,7 @@ scaled_pca_components:
   metadata:
     kedro-viz:
       preview_args:
-        nrows: 10
+        nrows: ${_preview_args.nrows}
 
 pca_scatter_fig:
   type: plotly.JSONDataset
