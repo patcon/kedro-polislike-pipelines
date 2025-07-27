@@ -66,6 +66,47 @@ vote_heatmap_fig:
 heatmap_filepath:
   type: MemoryDataset
 
+# PCA Subpipeline Datasets
+imputed_vote_matrix:
+  type: pandas.CSVDataset
+  filepath: data/04_feature/imputed_vote_matrix.csv
+  save_args:
+    index: true
+  load_args:
+    index_col: voter-id
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 10
+
+pca_components:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/pca_components.csv
+  save_args:
+    index: true
+  load_args:
+    index_col: voter-id
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 10
+
+scaled_pca_components:
+  type: pandas.CSVDataset
+  filepath: data/04_feature/scaled_pca_components.csv
+  save_args:
+    index: true
+  load_args:
+    index_col: voter-id
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 10
+
+pca_scatter_fig:
+  type: plotly.JSONDataset
+  filepath: data/08_reporting/pca_scatter_plot.json
+
 participant_projections:
   type: MemoryDataset
 

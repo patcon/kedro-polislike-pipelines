@@ -1,10 +1,12 @@
 import pandas as pd
-# from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA
+from sklearn.impute import SimpleImputer
 # from sklearn.cluster import KMeans
 import plotly.graph_objects as go
 import plotly.express as px
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
 from .utils import ensure_series
+from reddwarf.sklearn.transformers import SparsityAwareScaler
 
 # Helpers
 
@@ -94,6 +96,120 @@ def create_filtered_vote_matrix(
 # def cluster_kmeans(matrix: pd.DataFrame, n_clusters: int = 4) -> pd.Series:
 #     kmeans = KMeans(n_clusters=n_clusters, n_init="auto").fit(matrix)
 #     return pd.Series(kmeans.labels_, index=matrix.index)
+
+# PCA Subpipeline Nodes
+
+def mean_impute_vote_matrix(filtered_vote_matrix: pd.DataFrame) -> pd.DataFrame:
+    """
+    Perform mean imputation on the filtered vote matrix using sklearn's SimpleImputer.
+    Replace NaN values with the mean of each statement (column).
+    """
+    imputer = SimpleImputer(strategy='mean')
+    imputed_data = imputer.fit_transform(filtered_vote_matrix)
+
+    return pd.DataFrame(
+        imputed_data,
+        index=filtered_vote_matrix.index,
+        columns=filtered_vote_matrix.columns
+    )
+
+def reduce_with_pca(imputed_vote_matrix: pd.DataFrame, n_components: int = 2) -> pd.DataFrame:
+    """
+    Apply PCA dimensionality reduction to the imputed vote matrix.
+    """
+    pca = PCA(n_components=n_components)
+    components = pca.fit_transform(imputed_vote_matrix)
+
+    # Create column names based on number of components
+    DIMENSION_COLS = ["x", "y", "z"]
+    if n_components <= 3:
+        column_names = DIMENSION_COLS[:n_components]
+    else:
+        column_names = [f"PC{i+1}" for i in range(n_components)]
+
+    return pd.DataFrame(
+        components,
+        index=imputed_vote_matrix.index,
+        columns=pd.Index(column_names)
+    )
+
+def apply_sparsity_aware_scaler(participant_projections: pd.DataFrame, filtered_vote_matrix: pd.DataFrame) -> pd.DataFrame:
+    """
+    Apply SparsityAwareScaler to the projections, scaling based on sparse matrix.
+    """
+    scaler = SparsityAwareScaler(X_sparse=filtered_vote_matrix.values)
+    scaled_data = scaler.fit_transform(participant_projections.values)
+
+    return pd.DataFrame(
+        scaled_data,
+        index=participant_projections.index,
+        columns=participant_projections.columns
+    )
+
+def create_pca_scatter_plot(pca_components: pd.DataFrame) -> go.Figure:
+    """
+    Create a scatter plot of the PCA components for visualization.
+    Supports 2D and 3D projections.
+    """
+    x_col = str(pca_components.columns[0])  # 'x' or 'PC1'
+    y_col = str(pca_components.columns[1])  # 'y' or 'PC2'
+
+    if len(pca_components.columns) >= 3:
+        # 3D scatter plot
+        z_col = str(pca_components.columns[2])  # 'z' or 'PC3'
+        fig = go.Figure(data=go.Scatter3d(
+            x=pca_components[x_col],
+            y=pca_components[y_col],
+            z=pca_components[z_col],
+            mode='markers',
+            marker=dict(
+                size=6,
+                color=pca_components.index.astype(int),
+                colorscale='Viridis',
+                showscale=True,
+                colorbar=dict(title="Participant ID")
+            ),
+            text=[f"Participant {idx}" for idx in pca_components.index],
+            hovertemplate=f'%{{text}}<br>{x_col}: %{{x:.3f}}<br>{y_col}: %{{y:.3f}}<br>{z_col}: %{{z:.3f}}<extra></extra>'
+        ))
+
+        fig.update_layout(
+            title="PCA Components - 3D Projection",
+            scene=dict(
+                xaxis_title=f"{x_col.upper()} Component",
+                yaxis_title=f"{y_col.upper()} Component",
+                zaxis_title=f"{z_col.upper()} Component"
+            ),
+            width=800,
+            height=600
+        )
+    else:
+        # 2D scatter plot
+        fig = go.Figure(data=go.Scatter(
+            x=pca_components[x_col],
+            y=pca_components[y_col],
+            mode='markers',
+            marker=dict(
+                size=8,
+                color=pca_components.index.astype(int),
+                colorscale='Viridis',
+                showscale=True,
+                colorbar=dict(title="Participant ID")
+            ),
+            text=[f"Participant {idx}" for idx in pca_components.index],
+            hovertemplate=f'%{{text}}<br>{x_col}: %{{x:.3f}}<br>{y_col}: %{{y:.3f}}<extra></extra>'
+        ))
+
+        fig.update_layout(
+            title="PCA Components - 2D Projection",
+            xaxis_title=f"{x_col.upper()} Component",
+            yaxis_title=f"{y_col.upper()} Component",
+            width=800,
+            height=600,
+            plot_bgcolor='white'
+        )
+
+    return fig
 
 def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
     """

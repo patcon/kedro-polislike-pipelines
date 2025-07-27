@@ -4,11 +4,12 @@ version = "0.1.0"
 authors = [
     { name = "Patrick Connolly", email = "patrick.c.connolly@gmail.com" }
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "kedro>=0.19.8",
     "kedro-datasets[pandas]>=4.1.0",
     "kedro-viz>=12.0.0",
+    "red-dwarf",
     "scikit-learn>=1.6.1",
 ]
 
@@ -27,3 +28,6 @@ source_dir = "src"
 
 [tool.kedro_telemetry]
 project_id = "2f7648433d654496b56766f9dafd9f85"
+
+[tool.uv.sources]
+red-dwarf = { git = "http://github.com/polis-community/red-dwarf.git", rev = "algo-registries" }
