@@ -9,55 +9,57 @@ raw_votes:
     index: false
 
 raw_comments:
-  type: pandas.CSVDataset
+  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
   filepath: data/01_raw/comments.csv
   save_args:
     index: false
   load_args:
     index_col: comment-id
+  metadata:
+    index_in_preview: true
 
 deduped_votes:
   type: MemoryDataset
 
 raw_vote_matrix:
-  type: pandas.CSVDataset
+  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
   filepath: data/03_primary/raw_vote_matrix.csv
   save_args:
     index: true
   load_args:
     index_col: 0
   metadata:
-    kedro-viz:
-      preview_args:
-        nrows: ${_preview_args.nrows}
+    index_in_preview: true
 
 participant_filter_mask:
-  type: pandas.CSVDataset
+  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
   filepath: data/02_intermediate/participant_filter_mask.csv
   save_args:
     index: true
   load_args:
     index_col: 0
+  metadata:
+    index_in_preview: true
 
 statement_filter_mask:
-  type: pandas.CSVDataset
+  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
   filepath: data/02_intermediate/statement_filter_mask.csv
   save_args:
     index: true
   load_args:
     index_col: 0
+  metadata:
+    index_in_preview: true
 
 filtered_vote_matrix:
-  type: pandas.CSVDataset
+  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
   filepath: data/03_primary/filtered_vote_matrix.csv
   save_args:
     index: true
   load_args:
     index_col: 0
   metadata:
-    kedro-viz:
-      preview_args:
-        nrows: ${_preview_args.nrows}
+    index_in_preview: true
 
 vote_heatmap_fig:
   type: plotly.JSONDataset
@@ -68,40 +70,34 @@ heatmap_filepath:
 
 # PCA Subpipeline Datasets
 imputed_vote_matrix:
-  type: pandas.CSVDataset
+  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
   filepath: data/04_feature/imputed_vote_matrix.csv
   save_args:
     index: true
   load_args:
     index_col: 0
   metadata:
-    kedro-viz:
-      preview_args:
-        nrows: ${_preview_args.nrows}
+    index_in_preview: true
 
 pca_components:
-  type: pandas.CSVDataset
+  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
   filepath: data/05_model_input/pca_components.csv
   save_args:
     index: true
   load_args:
     index_col: 0
   metadata:
-    kedro-viz:
-      preview_args:
-        nrows: ${_preview_args.nrows}
+    index_in_preview: true
 
 scaled_pca_components:
-  type: pandas.CSVDataset
+  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
   filepath: data/04_feature/scaled_pca_components.csv
   save_args:
     index: true
   load_args:
     index_col: 0
   metadata:
-    kedro-viz:
-      preview_args:
-        nrows: ${_preview_args.nrows}
+    index_in_preview: true
 
 pca_scatter_fig:
   type: plotly.JSONDataset
