@@ -5,4 +5,7 @@ mask: null
 min_votes_threshold: 7
 
 # PCA Subpipeline Parameters
-pca_n_components: 2
+pca:
+  n_components: 2
+  flip_x: true
+  flip_y: false

@@ -146,20 +146,29 @@ def apply_sparsity_aware_scaler(participant_projections: pd.DataFrame, filtered_
         columns=participant_projections.columns
     )
 
-def create_pca_scatter_plot(pca_components: pd.DataFrame) -> go.Figure:
+def create_pca_scatter_plot(pca_components: pd.DataFrame, flip_x: bool = False, flip_y: bool = False) -> go.Figure:
     """
     Create a scatter plot of the PCA components for visualization.
     Supports 2D and 3D projections.
+
+    Args:
+        pca_components: DataFrame with PCA components
+        flip_x: If True, flip the x-axis by multiplying by -1
+        flip_y: If True, flip the y-axis by multiplying by -1
     """
     x_col = str(pca_components.columns[0])  # 'x' or 'PC1'
     y_col = str(pca_components.columns[1])  # 'y' or 'PC2'
+
+    # Apply flipping if requested
+    x_data = pca_components[x_col] * (-1 if flip_x else 1)
+    y_data = pca_components[y_col] * (-1 if flip_y else 1)
 
     if len(pca_components.columns) >= 3:
         # 3D scatter plot
         z_col = str(pca_components.columns[2])  # 'z' or 'PC3'
         fig = go.Figure(data=go.Scatter3d(
-            x=pca_components[x_col],
-            y=pca_components[y_col],
+            x=x_data,
+            y=y_data,
             z=pca_components[z_col],
             mode='markers',
             marker=dict(
@@ -186,8 +195,8 @@ def create_pca_scatter_plot(pca_components: pd.DataFrame) -> go.Figure:
     else:
         # 2D scatter plot
         fig = go.Figure(data=go.Scatter(
-            x=pca_components[x_col],
-            y=pca_components[y_col],
+            x=x_data,
+            y=y_data,
             mode='markers',
             marker=dict(
                 size=8,
