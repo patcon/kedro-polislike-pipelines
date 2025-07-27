@@ -8,7 +8,7 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(n.dedup_votes, inputs="raw_votes", outputs="deduped_votes", name="dedup_votes"),
         node(n.make_raw_vote_matrix, inputs="deduped_votes", outputs="raw_vote_matrix", name="make_raw_matrix"),
         node(n.make_participant_mask, inputs=["raw_vote_matrix", "params:min_votes_threshold"], outputs="participant_filter_mask", name="make_participant_mask"),
-        node(n.make_statement_mask, inputs="raw_comments", outputs="statement_filter_mask", name="make_statement_mask"),
+        node(n.make_statement_mask, inputs=["raw_comments", "params:strict_moderation"], outputs="statement_filter_mask", name="make_statement_mask"),
         node(n.create_filtered_vote_matrix, inputs=["raw_vote_matrix", "participant_filter_mask", "statement_filter_mask"], outputs="filtered_vote_matrix", name="create_filtered_matrix"),
         node(n.create_vote_heatmap, inputs="filtered_vote_matrix", outputs="vote_heatmap_fig", name="create_heatmap"),
         node(n.save_heatmap_html, inputs="vote_heatmap_fig", outputs="heatmap_filepath", name="save_heatmap"),
