@@ -25,7 +25,7 @@ raw_vote_matrix:
   save_args:
     index: true
   load_args:
-    index_col: voter-id
+    index_col: 0
   metadata:
     kedro-viz:
       preview_args:
@@ -37,7 +37,7 @@ participant_filter_mask:
   save_args:
     index: true
   load_args:
-    index_col: voter-id
+    index_col: 0
 
 statement_filter_mask:
   type: pandas.CSVDataset
@@ -45,7 +45,7 @@ statement_filter_mask:
   save_args:
     index: true
   load_args:
-    index_col: comment-id
+    index_col: 0
 
 filtered_vote_matrix:
   type: pandas.CSVDataset
@@ -53,7 +53,7 @@ filtered_vote_matrix:
   save_args:
     index: true
   load_args:
-    index_col: voter-id
+    index_col: 0
   metadata:
     kedro-viz:
       preview_args:
@@ -73,7 +73,7 @@ imputed_vote_matrix:
   save_args:
     index: true
   load_args:
-    index_col: voter-id
+    index_col: 0
   metadata:
     kedro-viz:
       preview_args:
@@ -85,7 +85,7 @@ pca_components:
   save_args:
     index: true
   load_args:
-    index_col: voter-id
+    index_col: 0
   metadata:
     kedro-viz:
       preview_args:
@@ -97,7 +97,7 @@ scaled_pca_components:
   save_args:
     index: true
   load_args:
-    index_col: voter-id
+    index_col: 0
   metadata:
     kedro-viz:
       preview_args:
