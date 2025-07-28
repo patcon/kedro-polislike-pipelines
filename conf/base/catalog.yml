@@ -9,7 +9,7 @@ raw_votes:
     index: false
 
 raw_comments:
-  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
+  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
   filepath: data/01_raw/comments.csv
   save_args:
     index: false
@@ -22,28 +22,28 @@ deduped_votes:
   type: MemoryDataset
 
 raw_vote_matrix:
-  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
+  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
   filepath: data/03_primary/raw_vote_matrix.csv
   metadata:
     index_in_preview: true
     save_load_index: true
 
 participant_filter_mask:
-  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
+  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
   filepath: data/02_intermediate/participant_filter_mask.csv
   metadata:
     index_in_preview: true
     save_load_index: true
 
 statement_filter_mask:
-  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
+  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
   filepath: data/02_intermediate/statement_filter_mask.csv
   metadata:
     index_in_preview: true
     save_load_index: true
 
 filtered_vote_matrix:
-  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
+  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
   filepath: data/03_primary/filtered_vote_matrix.csv
   metadata:
     index_in_preview: true
@@ -58,21 +58,21 @@ heatmap_filepath:
 
 # PCA Subpipeline Datasets
 imputed_vote_matrix:
-  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
+  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
   filepath: data/04_feature/imputed_vote_matrix.csv
   metadata:
     index_in_preview: true
     save_load_index: true
 
 pca_components:
-  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
+  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
   filepath: data/05_model_input/pca_components.csv
   metadata:
     index_in_preview: true
     save_load_index: true
 
 scaled_pca_components:
-  type: kedro_polis_classic.datasets.pandas.csv_dataset.CustomCSVDataset
+  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
   filepath: data/04_feature/scaled_pca_components.csv
   metadata:
     index_in_preview: true
