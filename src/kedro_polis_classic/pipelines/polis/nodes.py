@@ -11,13 +11,39 @@ from reddwarf.sklearn.transformers import SparsityAwareScaler
 # Helpers
 
 @ensure_series('statement_mask')
-def apply_statement_filter(matrix: pd.DataFrame, statement_mask: pd.Series) -> pd.DataFrame:
-    """Filter out moderated statements from the vote matrix"""
-    # Filter to only statements that are True in the mask
-    unfiltered_statement_ids = statement_mask.loc[statement_mask].index
-    # Convert to strings as more universal type.
-    # NOTE: Are the any circumstances where `matrix` might still have numeric column names?
-    return matrix.loc[:, unfiltered_statement_ids.astype(str)]
+def apply_statement_filter(matrix: pd.DataFrame, statement_mask: pd.Series, filter_type: str = "fill_zero") -> pd.DataFrame:
+    """Filter out moderated statements from the vote matrix
+
+    Args:
+        matrix: Vote matrix with statements as columns
+        statement_mask: Boolean mask indicating which statements to keep
+        filter_type: Strategy for handling filtered statements:
+            - "fill_zero": Keep all columns but fill filtered statements with 0 (default)
+            - "drop": Remove columns for filtered statements
+    """
+    # Convert statement IDs to strings as more universal type
+    # NOTE: Are there any circumstances where `matrix` might still have numeric column names?
+    statement_mask = statement_mask.copy()
+    statement_mask.index = statement_mask.index.astype(str)
+
+    if filter_type == "drop":
+        # Filter to only statements that are True in the mask
+        unfiltered_statement_ids = statement_mask.loc[statement_mask].index
+        return matrix.loc[:, unfiltered_statement_ids]
+
+    elif filter_type == "fill_zero":
+        # Create a copy to avoid modifying the original
+        result = matrix.copy()
+        # Get statement IDs that should be filtered out (False in mask)
+        filtered_statement_ids = statement_mask.loc[~statement_mask].index
+        # Fill filtered columns with 0, only for columns that exist in the matrix
+        existing_filtered_cols = [col for col in filtered_statement_ids if col in result.columns]
+        if existing_filtered_cols:
+            result.loc[:, existing_filtered_cols] = 0
+        return result
+
+    else:
+        raise ValueError(f"Invalid filter_type '{filter_type}'. Must be 'drop' or 'fill_zero'.")
 
 @ensure_series('participant_mask')
 def apply_participant_filter(matrix: pd.DataFrame, participant_mask: pd.Series) -> pd.DataFrame:
@@ -81,7 +107,7 @@ def create_filtered_vote_matrix(
 ) -> pd.DataFrame:
     """Apply both participant and statement filters to create the final filtered matrix"""
     # First filter statements (columns)
-    raw_vote_matrix = apply_statement_filter(raw_vote_matrix, statement_mask)
+    raw_vote_matrix = apply_statement_filter(raw_vote_matrix, statement_mask, filter_type="fill_zero")
 
     # Then filter participants (rows)
     raw_vote_matrix = apply_participant_filter(raw_vote_matrix, participant_mask)
@@ -228,6 +254,8 @@ def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
     - Green (+1) for agree
     - Pale yellow for missing votes (NaN)
     """
+    # TODO: To be more like compdem analysis, we should use
+    # the "drop" filter_type to generate to filtered matrix.
 
     # Create a copy of the matrix for display
     display_matrix = filtered_matrix.copy()
