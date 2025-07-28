@@ -28,6 +28,13 @@ raw_vote_matrix:
     index_in_preview: true
     save_load_index: true
 
+raw_participants_meta:
+  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
+  filepath: data/03_primary/raw_participants_meta.csv
+  metadata:
+    index_in_preview: true
+    save_load_index: true
+
 participant_filter_mask:
   type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
   filepath: data/02_intermediate/participant_filter_mask.csv

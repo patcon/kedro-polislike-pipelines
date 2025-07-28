@@ -246,6 +246,46 @@ def create_pca_scatter_plot(pca_components: pd.DataFrame, flip_x: bool = False, 
 
     return fig
 
+def create_participants_meta(raw_vote_matrix: pd.DataFrame, raw_comments: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create participant metadata with voting statistics.
+
+    Args:
+        raw_vote_matrix: DataFrame with participants as rows and statements as columns
+        raw_comments: DataFrame with comment data to count n-comments
+
+    Returns:
+        DataFrame with columns: n-comments, n-votes, n-agree, n-disagree, n-pass
+    """
+    participants_meta = pd.DataFrame(index=raw_vote_matrix.index)
+    participants_meta.index.name = "voter-id"
+
+    # Count total votes (non-NaN values)
+    participants_meta['n-votes'] = raw_vote_matrix.count(axis=1)
+
+    # Count agrees (1.0 values)
+    participants_meta['n-agree'] = (raw_vote_matrix == 1.0).sum(axis=1)
+
+    # Count disagrees (-1.0 values)
+    participants_meta['n-disagree'] = (raw_vote_matrix == -1.0).sum(axis=1)
+
+    # Count passes/neutral (0.0 values)
+    participants_meta['n-pass'] = (raw_vote_matrix == 0.0).sum(axis=1)
+
+    # Count comments authored by each participant
+    # raw_comments has 'author-id' column with voter-id
+    if 'author-id' in raw_comments.columns:
+        comment_counts = raw_comments['author-id'].value_counts()
+        participants_meta['n-comments'] = participants_meta.index.to_series().map(comment_counts).fillna(0).astype(int)
+    else:
+        # If no author-id column, set to 0 for all participants
+        participants_meta['n-comments'] = 0
+
+    # Reorder columns for better readability
+    participants_meta = participants_meta[['n-comments', 'n-votes', 'n-agree', 'n-disagree', 'n-pass']]
+
+    return participants_meta
+
 def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
     """
     Create a plotly heatmap of the filtered vote matrix with custom color scheme:
