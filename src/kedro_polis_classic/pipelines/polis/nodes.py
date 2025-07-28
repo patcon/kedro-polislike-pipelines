@@ -79,6 +79,9 @@ def make_raw_vote_matrix(deduped_votes: pd.DataFrame) -> pd.DataFrame:
         values="vote"
     )
 
+    # Convert vote values to integers (handles NaN values properly)
+    matrix = matrix.astype('Int64')
+
     return matrix
 
 def make_participant_mask(matrix: pd.DataFrame, min_votes: int = 7) -> pd.Series:
@@ -111,6 +114,9 @@ def create_filtered_vote_matrix(
 
     # Then filter participants (rows)
     filtered_matrix = apply_participant_filter(filtered_matrix, participant_mask)
+
+    # Ensure vote values are integers
+    filtered_matrix = filtered_matrix.astype('Int64')
 
     return filtered_matrix
 
