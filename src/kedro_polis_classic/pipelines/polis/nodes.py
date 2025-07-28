@@ -11,7 +11,7 @@ from reddwarf.sklearn.transformers import SparsityAwareScaler
 # Helpers
 
 @ensure_series('statement_mask')
-def apply_statement_filter(matrix: pd.DataFrame, statement_mask: pd.Series, filter_type: str = "fill_zero") -> pd.DataFrame:
+def _apply_statement_filter(matrix: pd.DataFrame, statement_mask: pd.Series, filter_type: str = "fill_zero") -> pd.DataFrame:
     """Filter out moderated statements from the vote matrix
 
     Args:
@@ -46,7 +46,7 @@ def apply_statement_filter(matrix: pd.DataFrame, statement_mask: pd.Series, filt
         raise ValueError(f"Invalid filter_type '{filter_type}'. Must be 'drop' or 'fill_zero'.")
 
 @ensure_series('participant_mask')
-def apply_participant_filter(matrix: pd.DataFrame, participant_mask: pd.Series) -> pd.DataFrame:
+def _apply_participant_filter(matrix: pd.DataFrame, participant_mask: pd.Series) -> pd.DataFrame:
     """Filter out participants who don't meet the minimum vote threshold"""
     # Filter to only participants that are True in the mask
     unfiltered_participant_ids = participant_mask.loc[participant_mask].index
@@ -110,10 +110,10 @@ def create_filtered_vote_matrix(
 ) -> pd.DataFrame:
     """Apply both participant and statement filters to create the final filtered matrix"""
     # First filter statements (columns)
-    filtered_matrix = apply_statement_filter(raw_vote_matrix, statement_mask, filter_type="fill_zero")
+    filtered_matrix = _apply_statement_filter(raw_vote_matrix, statement_mask, filter_type="fill_zero")
 
     # Then filter participants (rows)
-    filtered_matrix = apply_participant_filter(filtered_matrix, participant_mask)
+    filtered_matrix = _apply_participant_filter(filtered_matrix, participant_mask)
 
     # Ensure vote values are integers
     filtered_matrix = filtered_matrix.astype('Int64')
