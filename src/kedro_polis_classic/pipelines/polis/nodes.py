@@ -107,12 +107,12 @@ def create_filtered_vote_matrix(
 ) -> pd.DataFrame:
     """Apply both participant and statement filters to create the final filtered matrix"""
     # First filter statements (columns)
-    raw_vote_matrix = apply_statement_filter(raw_vote_matrix, statement_mask, filter_type="fill_zero")
+    filtered_matrix = apply_statement_filter(raw_vote_matrix, statement_mask, filter_type="fill_zero")
 
     # Then filter participants (rows)
-    raw_vote_matrix = apply_participant_filter(raw_vote_matrix, participant_mask)
+    filtered_matrix = apply_participant_filter(filtered_matrix, participant_mask)
 
-    return raw_vote_matrix
+    return filtered_matrix
 
 # def run_pca(matrix: pd.DataFrame, n_components: int = 2) -> pd.DataFrame:
 #     pca = PCA(n_components=n_components)
