@@ -356,3 +356,56 @@ def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
 #     """Save the plotly figure as an HTML file"""
 #     fig.write_html(filepath)
 #     return filepath
+
+def generate_polismath_json(
+    raw_vote_matrix: pd.DataFrame,
+    raw_comments: pd.DataFrame
+) -> dict:
+    """
+    Generate polismath JSON structure with the required keys.
+
+    Args:
+        raw_vote_matrix: The raw vote matrix
+        raw_comments: Raw comments data
+
+    Returns:
+        Dictionary with polismath JSON structure
+    """
+    # Get basic counts
+    n_participants = len(raw_vote_matrix.index)
+    n_comments = len(raw_comments.index)
+
+    # Create the polismath JSON structure
+    polismath_data = {
+        "comment-priorities": {},
+        "user-vote-counts": {},
+        "meta-tids": [],
+        "pca": {},
+        "group-clusters": {},
+        "n": n_participants,
+        "consensus": {
+            "agree": [],
+            "disagree": []
+        },
+        "n-cmts": n_comments,
+        "repness": {},
+        "group-aware-consensus": {},
+        "mod-in": [],
+        "votes-base": {},
+        "base-clusters": {
+            "id": [],
+            "members": [],
+            "x": [],
+            "y": [],
+            "count": []
+        },
+        "mod-out": [],
+        "group-votes": {},
+        "lastModTimestamp": None,
+        "in-conv": [],
+        "tids": [],
+        "lastVoteTimestamp": 0,
+        "math_tick": 0
+    }
+
+    return polismath_data

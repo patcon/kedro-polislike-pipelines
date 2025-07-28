@@ -119,6 +119,13 @@ pca_scatter_fig:
     kedro-viz:
       layer: reporting
 
+polismath_json:
+  type: json.JSONDataset
+  filepath: data/08_reporting/polismath.json
+  metadata:
+    kedro-viz:
+      layer: reporting
+
 participant_projections:
   type: MemoryDataset
 

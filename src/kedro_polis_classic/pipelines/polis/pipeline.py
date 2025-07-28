@@ -20,6 +20,9 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(n.apply_sparsity_aware_scaler, inputs=["pca_components", "filtered_vote_matrix"], outputs="scaled_pca_components", name="apply_sparsity_scaler"),
         node(n.create_pca_scatter_plot, inputs=["scaled_pca_components", "params:pca.flip_x", "params:pca.flip_y"], outputs="pca_scatter_fig", name="create_pca_plot"),
 
+        # Polismath JSON reporting
+        node(n.generate_polismath_json, inputs=["raw_vote_matrix", "raw_comments"], outputs="polismath_json", name="generate_polismath_json"),
+
         #node(n.run_pca, inputs="filtered_vote_matrix", outputs="participant_projections", name="run_pca"),
         #node(n.cluster_kmeans, inputs="participant_projections", outputs="labels", name="kmeans_cluster"),
     ])
