@@ -375,10 +375,16 @@ def generate_polismath_json(
     n_participants = len(raw_vote_matrix.index)
     n_comments = len(raw_comments.index)
 
+    # Calculate user vote counts (non-NaN votes per participant)
+    user_vote_counts = {}
+    for voter_id in raw_vote_matrix.index:
+        vote_count = raw_vote_matrix.loc[voter_id].count()  # count() excludes NaN values
+        user_vote_counts[voter_id] = int(vote_count)
+
     # Create the polismath JSON structure
     polismath_data = {
         "comment-priorities": {},
-        "user-vote-counts": {},
+        "user-vote-counts": user_vote_counts,
         "meta-tids": [],
         "pca": {},
         "group-clusters": {},
