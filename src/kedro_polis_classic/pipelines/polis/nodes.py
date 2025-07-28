@@ -278,7 +278,7 @@ def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
 
     return fig
 
-def save_heatmap_html(fig: go.Figure, filepath: str = "data/08_reporting/vote_heatmap.html"):
-    """Save the plotly figure as an HTML file"""
-    fig.write_html(filepath)
-    return filepath
+# def save_heatmap_html(fig: go.Figure, filepath: str = "data/08_reporting/vote_heatmap.html"):
+#     """Save the plotly figure as an HTML file"""
+#     fig.write_html(filepath)
+#     return filepath
