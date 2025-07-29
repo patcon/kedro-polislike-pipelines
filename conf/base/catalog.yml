@@ -92,7 +92,7 @@ imputed_vote_matrix:
     index_in_preview: true
     save_load_index: true
     kedro-viz:
-      layer: primary
+      layer: pca
 
 pca_components:
   type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
@@ -101,7 +101,7 @@ pca_components:
     index_in_preview: true
     save_load_index: true
     kedro-viz:
-      layer: primary
+      layer: pca
 
 scaled_pca_components:
   type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
@@ -110,7 +110,7 @@ scaled_pca_components:
     index_in_preview: true
     save_load_index: true
     kedro-viz:
-      layer: primary
+      layer: pca
 
 pca_scatter_fig:
   type: plotly.JSONDataset
