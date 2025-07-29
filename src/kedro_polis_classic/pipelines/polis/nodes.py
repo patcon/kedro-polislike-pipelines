@@ -52,6 +52,99 @@ def _apply_participant_filter(matrix: pd.DataFrame, participant_mask: pd.Series)
     unfiltered_participant_ids = participant_mask.loc[participant_mask].index
     return matrix.loc[unfiltered_participant_ids, :]
 
+def _create_scatter_plot(
+    data: pd.DataFrame,
+    flip_x: bool,
+    flip_y: bool,
+    colorbar_title: str,
+    color_values: pd.Series,
+    title: str
+) -> go.Figure:
+    """
+    Helper function to create a 2D or 3D scatter plot based on the number of columns in the data.
+
+    Args:
+        data: DataFrame with data for plotting
+        flip_x: If True, flip the x-axis by multiplying by -1
+        flip_y: If True, flip the y-axis by multiplying by -1
+        colorbar_title: Title for the colorbar
+        color_values: Data for the marker color
+        title: Title for the plot
+
+    Returns:
+        A Plotly figure (2D or 3D scatter plot)
+    """
+
+    # Get column names
+    x_col = data.columns[0]
+    y_col = data.columns[1]
+
+    # Apply flipping if requested
+    x_data = data[x_col] * (-1 if flip_x else 1)
+    y_data = data[y_col] * (-1 if flip_y else 1)
+
+    # Check for 2D or 3D plot based on column count
+    if len(data.columns) == 3:
+        # 3D scatter plot
+        z_col = data.columns[2]
+        fig = go.Figure(data=go.Scatter3d(
+            x=x_data,
+            y=y_data,
+            z=data[z_col],
+            mode='markers',
+            marker=dict(
+                size=6,
+                color=color_values,
+                colorscale='Viridis',
+                showscale=True,
+                colorbar=dict(title=colorbar_title)
+            ),
+            text=[f"Participant {idx}" for idx in range(len(data))],
+            hovertemplate=f'%{{text}}<br>{x_col}: %{{x:.3f}}<br>{y_col}: %{{y:.3f}}<br>{z_col}: %{{z:.3f}}<extra></extra>'
+        ))
+
+        fig.update_layout(
+            title=title,
+            scene=dict(
+                xaxis_title=f"{x_col.upper()} Component",
+                yaxis_title=f"{y_col.upper()} Component",
+                zaxis_title=f"{z_col.upper()} Component"
+            ),
+            width=800,
+            height=600
+        )
+
+    elif len(data.columns) == 2:
+        # 2D scatter plot
+        fig = go.Figure(data=go.Scatter(
+            x=x_data,
+            y=y_data,
+            mode='markers',
+            marker=dict(
+                size=8,
+                color=color_values,
+                colorscale='Viridis',
+                showscale=True,
+                colorbar=dict(title=colorbar_title)
+            ),
+            text=[f"Participant {idx}" for idx in range(len(data))],
+            hovertemplate=f'%{{text}}<br>{x_col}: %{{x:.3f}}<br>{y_col}: %{{y:.3f}}<extra></extra>'
+        ))
+
+        fig.update_layout(
+            title=title,
+            xaxis_title=f"{x_col.upper()} Component",
+            yaxis_title=f"{y_col.upper()} Component",
+            width=800,
+            height=600,
+            plot_bgcolor='white'
+        )
+
+    else:
+        raise ValueError("Data must have exactly 2 or 3 columns for 2D or 3D plots.")
+
+    return fig
+
 # Nodes
 
 def load_polis_data(report_id: str):
@@ -188,69 +281,14 @@ def create_pca_scatter_plot(pca_components: pd.DataFrame, flip_x: bool = False, 
         flip_x: If True, flip the x-axis by multiplying by -1
         flip_y: If True, flip the y-axis by multiplying by -1
     """
-    x_col = str(pca_components.columns[0])  # 'x' or 'PC1'
-    y_col = str(pca_components.columns[1])  # 'y' or 'PC2'
-
-    # Apply flipping if requested
-    x_data = pca_components[x_col] * (-1 if flip_x else 1)
-    y_data = pca_components[y_col] * (-1 if flip_y else 1)
-
-    if len(pca_components.columns) >= 3:
-        # 3D scatter plot
-        z_col = str(pca_components.columns[2])  # 'z' or 'PC3'
-        fig = go.Figure(data=go.Scatter3d(
-            x=x_data,
-            y=y_data,
-            z=pca_components[z_col],
-            mode='markers',
-            marker=dict(
-                size=6,
-                color=pca_components.index.astype(int),
-                colorscale='Viridis',
-                showscale=True,
-                colorbar=dict(title="Participant ID")
-            ),
-            text=[f"Participant {idx}" for idx in pca_components.index],
-            hovertemplate=f'%{{text}}<br>{x_col}: %{{x:.3f}}<br>{y_col}: %{{y:.3f}}<br>{z_col}: %{{z:.3f}}<extra></extra>'
-        ))
-
-        fig.update_layout(
-            title="PCA Components - 3D Projection",
-            scene=dict(
-                xaxis_title=f"{x_col.upper()} Component",
-                yaxis_title=f"{y_col.upper()} Component",
-                zaxis_title=f"{z_col.upper()} Component"
-            ),
-            width=800,
-            height=600
-        )
-    else:
-        # 2D scatter plot
-        fig = go.Figure(data=go.Scatter(
-            x=x_data,
-            y=y_data,
-            mode='markers',
-            marker=dict(
-                size=8,
-                color=pca_components.index.astype(int),
-                colorscale='Viridis',
-                showscale=True,
-                colorbar=dict(title="Participant ID")
-            ),
-            text=[f"Participant {idx}" for idx in pca_components.index],
-            hovertemplate=f'%{{text}}<br>{x_col}: %{{x:.3f}}<br>{y_col}: %{{y:.3f}}<extra></extra>'
-        ))
-
-        fig.update_layout(
-            title="PCA Components - 2D Projection",
-            xaxis_title=f"{x_col.upper()} Component",
-            yaxis_title=f"{y_col.upper()} Component",
-            width=800,
-            height=600,
-            plot_bgcolor='white'
-        )
-
-    return fig
+    return _create_scatter_plot(
+        data=pca_components,
+        flip_x=flip_x,
+        flip_y=flip_y,
+        colorbar_title="Participant ID",
+        color_values=pca_components.index.astype(int),  # You can adjust this as needed
+        title="Scaled Participant Projections"
+    )
 
 def create_participants_meta(raw_vote_matrix: pd.DataFrame, raw_comments: pd.DataFrame) -> pd.DataFrame:
     """
