@@ -28,8 +28,8 @@ class PolisAPIDataset(AbstractDataset):
 
     def _describe(self) -> dict:
         return {
-            "base_url": self.base_url,
             "report_id": self.report_id,
+            "base_url": self.base_url,
             "repair_is_meta_column": self.repair_is_meta_column,
         }
 
