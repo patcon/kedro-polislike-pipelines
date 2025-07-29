@@ -7,7 +7,7 @@ class PolisAPIDataset(AbstractDataset):
         self.base_url = base_url if base_url else "https://pol.is"
 
     def load(self) -> dict[str, pd.DataFrame]:
-        export_base = f"${self.base_url}/api/v3/reportExport/{self.report_id}"
+        export_base = f"{self.base_url}/api/v3/reportExport/{self.report_id}"
         comments_url = f"{export_base}/comments.csv"
         votes_url = f"{export_base}/votes.csv"
 
