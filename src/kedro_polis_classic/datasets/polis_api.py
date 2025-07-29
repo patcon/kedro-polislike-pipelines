@@ -60,9 +60,9 @@ class PolisAPIDataset(AbstractDataset):
         comments_data = response.json()
 
         # Create a dictionary to map 'tid' to 'is_meta'
-        is_meta_dict = {comment["tid"]: comment.get("is_meta", False) for comment in comments_data}
+        is_meta_dict = {comment["tid"]: comment["is_meta"] for comment in comments_data}
 
         # Map the 'is-meta' values to the comments DataFrame based on 'comment-id' (or 'tid')
-        comments["is-meta"] = comments["comment-id"].map(is_meta_dict)
+        comments["is-meta"] = comments["comment-id"].map(lambda tid: is_meta_dict[tid])
 
         return comments
