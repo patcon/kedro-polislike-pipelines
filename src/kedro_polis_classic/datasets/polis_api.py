@@ -2,13 +2,14 @@ import pandas as pd
 from kedro.io import AbstractDataset
 
 class PolisAPIDataset(AbstractDataset):
-    def __init__(self, report_id: str):
+    def __init__(self, report_id: str, base_url: str | None = None):
         self.report_id = report_id
+        self.base_url = base_url if base_url else "https://pol.is"
 
     def load(self) -> dict[str, pd.DataFrame]:
-        base = f"https://pol.is/api/v3/reportExport/{self.report_id}"
-        comments_url = f"{base}/comments.csv"
-        votes_url = f"{base}/votes.csv"
+        export_base = f"${self.base_url}/api/v3/reportExport/{self.report_id}"
+        comments_url = f"{export_base}/comments.csv"
+        votes_url = f"{export_base}/votes.csv"
 
         comments = pd.read_csv(comments_url)
         votes = pd.read_csv(votes_url)
