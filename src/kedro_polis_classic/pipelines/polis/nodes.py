@@ -8,6 +8,7 @@ from typing import Optional
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
 from .utils import ensure_series
 from reddwarf.sklearn.transformers import SparsityAwareScaler
+from reddwarf.utils.statements import process_statements
 
 # Helpers
 
@@ -436,6 +437,19 @@ def generate_polismath_json(
     n_participants = len(raw_vote_matrix.index)
     n_comments = len(raw_comments.index)
 
+    # Remap columns into expected format and process.
+    col_map = {
+        "comment-id": "statement_id",
+        "is-meta": "is_meta",
+    }
+    remapped_comments = (
+        raw_comments
+            .reset_index()
+            .rename(columns=col_map, errors="raise")
+            .to_dict(orient="records")
+    )
+    _, mod_in_statement_ids, mod_out_statement_ids, meta_statement_ids = process_statements(statement_data=remapped_comments)
+
     # Calculate user vote counts (non-NaN votes per participant)
     user_vote_counts = {}
     for voter_id in raw_vote_matrix.index:
@@ -446,7 +460,7 @@ def generate_polismath_json(
     polismath_data = {
         "comment-priorities": {},
         "user-vote-counts": user_vote_counts,
-        "meta-tids": [],
+        "meta-tids": meta_statement_ids,
         "pca": {},
         "group-clusters": {},
         "n": n_participants,
@@ -457,7 +471,7 @@ def generate_polismath_json(
         "n-cmts": n_comments,
         "repness": {},
         "group-aware-consensus": {},
-        "mod-in": [],
+        "mod-in": mod_in_statement_ids,
         "votes-base": {},
         "base-clusters": {
             "id": [],
@@ -466,7 +480,7 @@ def generate_polismath_json(
             "y": [],
             "count": []
         },
-        "mod-out": [],
+        "mod-out": mod_out_statement_ids,
         "group-votes": {},
         "lastModTimestamp": None,
         "in-conv": [],
