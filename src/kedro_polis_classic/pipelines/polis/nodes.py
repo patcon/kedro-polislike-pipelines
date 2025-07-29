@@ -228,11 +228,6 @@ def make_masked_vote_matrix(
         filter_type="fill_zero",
     )
 
-# def run_pca(matrix: pd.DataFrame, n_components: int = 2) -> pd.DataFrame:
-#     pca = PCA(n_components=n_components)
-#     components = pca.fit_transform(matrix)
-#     return pd.DataFrame(components, index=matrix.index, columns=["x", "y"])
-
 # def cluster_kmeans(matrix: pd.DataFrame, n_clusters: int = 4) -> pd.Series:
 #     kmeans = KMeans(n_clusters=n_clusters, n_init="auto").fit(matrix)
 #     return pd.Series(kmeans.labels_, index=matrix.index)
@@ -422,11 +417,6 @@ def create_vote_heatmap(
     )
 
     return fig
-
-# def save_heatmap_html(fig: go.Figure, filepath: str = "data/08_reporting/vote_heatmap.html"):
-#     """Save the plotly figure as an HTML file"""
-#     fig.write_html(filepath)
-#     return filepath
 
 def generate_polismath_json(
     raw_vote_matrix: pd.DataFrame,

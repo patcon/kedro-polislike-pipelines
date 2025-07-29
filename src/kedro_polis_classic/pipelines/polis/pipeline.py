@@ -12,7 +12,6 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(n.make_statement_mask, inputs=["raw_comments", "params:strict_moderation"], outputs="statement_filter_mask", name="make_statement_mask"),
         node(n.make_masked_vote_matrix, inputs=["raw_vote_matrix", "statement_filter_mask"], outputs="masked_vote_matrix", name="create_masked_matrix"),
         node(n.create_vote_heatmap, inputs=["raw_vote_matrix", "participant_filter_mask", "statement_filter_mask"], outputs="vote_heatmap_fig", name="create_heatmap"),
-        # node(n.save_heatmap_html, inputs="vote_heatmap_fig", outputs="heatmap_filepath", name="save_heatmap"),
 
         # PCA Subpipeline
         node(n.mean_impute_vote_matrix, inputs="masked_vote_matrix", outputs="imputed_vote_matrix", name="mean_impute_matrix"),
@@ -28,6 +27,5 @@ def create_pipeline(**kwargs) -> Pipeline:
         # Polismath JSON reporting
         node(n.generate_polismath_json, inputs=["raw_vote_matrix", "raw_comments"], outputs="polismath_json", name="generate_polismath_json"),
 
-        #node(n.run_pca, inputs="filtered_vote_matrix", outputs="participant_projections", name="run_pca"),
         #node(n.cluster_kmeans, inputs="participant_projections", outputs="labels", name="kmeans_cluster"),
     ])
