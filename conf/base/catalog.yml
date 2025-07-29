@@ -65,9 +65,9 @@ statement_filter_mask:
     kedro-viz:
       layer: primary
 
-filtered_vote_matrix:
+masked_vote_matrix:
   type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/03_primary/filtered_vote_matrix.csv
+  filepath: data/03_primary/masked_vote_matrix.csv
   metadata:
     index_in_preview: true
     save_load_index: true

@@ -4,6 +4,7 @@ from sklearn.impute import SimpleImputer
 # from sklearn.cluster import KMeans
 import plotly.graph_objects as go
 import plotly.express as px
+from typing import Optional
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
 from .utils import ensure_series
 from reddwarf.sklearn.transformers import SparsityAwareScaler
@@ -54,16 +55,18 @@ def _apply_participant_filter(matrix: pd.DataFrame, participant_mask: pd.Series)
 
 def _create_filtered_vote_matrix(
     raw_vote_matrix: pd.DataFrame,
-    participant_mask: pd.Series,
-    statement_mask: pd.Series,
+    participant_mask: Optional[pd.Series] = None,
+    statement_mask: Optional[pd.Series] = None,
     filter_type: str = "fill_zero",
 ) -> pd.DataFrame:
     filtered_matrix = raw_vote_matrix.copy()
     # First filter statements (columns)
-    filtered_matrix = _apply_statement_filter(filtered_matrix, statement_mask, filter_type=filter_type)
+    if statement_mask is not None:
+        filtered_matrix = _apply_statement_filter(filtered_matrix, statement_mask, filter_type=filter_type)
 
     # Then filter participants (rows)
-    filtered_matrix = _apply_participant_filter(filtered_matrix, participant_mask)
+    if participant_mask is not None:
+        filtered_matrix = _apply_participant_filter(filtered_matrix, participant_mask)
 
     # Ensure vote values are integers
     filtered_matrix = filtered_matrix.astype('Int64')
@@ -214,15 +217,13 @@ def make_statement_mask(comments: pd.DataFrame, strict_moderation: bool = True) 
     mask.name = "statement-in" # feature-in
     return mask
 
-def make_filtered_vote_matrix(
+def make_masked_vote_matrix(
     raw_vote_matrix: pd.DataFrame,
-    participant_mask: pd.Series,
     statement_mask: pd.Series,
 ) -> pd.DataFrame:
     """Apply both participant and statement filters to create the final filtered matrix"""
     return _create_filtered_vote_matrix(
         raw_vote_matrix=raw_vote_matrix,
-        participant_mask=participant_mask,
         statement_mask=statement_mask,
         filter_type="fill_zero",
     )
@@ -367,9 +368,6 @@ def create_vote_heatmap(
     - Green (+1) for agree
     - Pale yellow for missing votes (NaN)
     """
-    # TODO: To be more like compdem analysis, we should use
-    # the "drop" filter_type to generate to filtered matrix.
-
     # Create a copy of the matrix for display
     display_matrix = _create_filtered_vote_matrix(
         raw_vote_matrix=raw_vote_matrix,
