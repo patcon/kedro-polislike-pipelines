@@ -3,9 +3,10 @@ import requests
 from kedro.io import AbstractDataset
 
 class PolisAPIDataset(AbstractDataset):
-    def __init__(self, report_id: str, base_url: str | None = None):
+    def __init__(self, report_id: str, base_url: str | None = None, repair_is_meta_column: bool = True):
         self.report_id = report_id
         self.base_url = base_url if base_url else "https://pol.is"
+        self.repair_is_meta_column = repair_is_meta_column
 
     def load(self) -> dict[str, pd.DataFrame]:
         export_base = f"{self.base_url}/api/v3/reportExport/{self.report_id}"
@@ -16,7 +17,7 @@ class PolisAPIDataset(AbstractDataset):
         votes = pd.read_csv(votes_url)
 
         # Check if 'is-meta' column exists, and if not, fetch the conversation_id
-        if "is-meta" not in comments.columns:
+        if "is-meta" not in comments.columns and self.repair_is_meta_column:
             conversation_id = self._get_conversation_id()
             comments = self._add_is_meta_column(comments, conversation_id)
 
@@ -29,6 +30,7 @@ class PolisAPIDataset(AbstractDataset):
         return {
             "base_url": self.base_url,
             "report_id": self.report_id,
+            "repair_is_meta_column": self.repair_is_meta_column,
         }
 
     def _get_conversation_id(self) -> str:
