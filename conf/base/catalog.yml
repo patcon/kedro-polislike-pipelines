@@ -112,9 +112,16 @@ scaled_pca_components:
     kedro-viz:
       layer: pca
 
-pca_scatter_fig:
+pca_scatter_fig_pids:
   type: plotly.JSONDataset
-  filepath: data/08_reporting/pca_scatter_plot.json
+  filepath: data/08_reporting/pca_scatter_plot_pids.json
+  metadata:
+    kedro-viz:
+      layer: reporting
+
+pca_scatter_fig_vote_counts:
+  type: plotly.JSONDataset
+  filepath: data/08_reporting/pca_scatter_plot_vote_counts.json
   metadata:
     kedro-viz:
       layer: reporting

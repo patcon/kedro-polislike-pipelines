@@ -52,6 +52,24 @@ def _apply_participant_filter(matrix: pd.DataFrame, participant_mask: pd.Series)
     unfiltered_participant_ids = participant_mask.loc[participant_mask].index
     return matrix.loc[unfiltered_participant_ids, :]
 
+def _create_filtered_vote_matrix(
+    raw_vote_matrix: pd.DataFrame,
+    participant_mask: pd.Series,
+    statement_mask: pd.Series,
+    filter_type: str = "fill_zero",
+) -> pd.DataFrame:
+    filtered_matrix = raw_vote_matrix.copy()
+    # First filter statements (columns)
+    filtered_matrix = _apply_statement_filter(filtered_matrix, statement_mask, filter_type=filter_type)
+
+    # Then filter participants (rows)
+    filtered_matrix = _apply_participant_filter(filtered_matrix, participant_mask)
+
+    # Ensure vote values are integers
+    filtered_matrix = filtered_matrix.astype('Int64')
+
+    return filtered_matrix
+
 def _create_scatter_plot(
     data: pd.DataFrame,
     flip_x: bool,
@@ -196,22 +214,18 @@ def make_statement_mask(comments: pd.DataFrame, strict_moderation: bool = True) 
     mask.name = "statement-in" # feature-in
     return mask
 
-def create_filtered_vote_matrix(
+def make_filtered_vote_matrix(
     raw_vote_matrix: pd.DataFrame,
     participant_mask: pd.Series,
-    statement_mask: pd.Series
+    statement_mask: pd.Series,
 ) -> pd.DataFrame:
     """Apply both participant and statement filters to create the final filtered matrix"""
-    # First filter statements (columns)
-    filtered_matrix = _apply_statement_filter(raw_vote_matrix, statement_mask, filter_type="fill_zero")
-
-    # Then filter participants (rows)
-    filtered_matrix = _apply_participant_filter(filtered_matrix, participant_mask)
-
-    # Ensure vote values are integers
-    filtered_matrix = filtered_matrix.astype('Int64')
-
-    return filtered_matrix
+    return _create_filtered_vote_matrix(
+        raw_vote_matrix=raw_vote_matrix,
+        participant_mask=participant_mask,
+        statement_mask=statement_mask,
+        filter_type="fill_zero",
+    )
 
 # def run_pca(matrix: pd.DataFrame, n_components: int = 2) -> pd.DataFrame:
 #     pca = PCA(n_components=n_components)
@@ -271,7 +285,7 @@ def apply_sparsity_aware_scaler(participant_projections: pd.DataFrame, filtered_
         columns=participant_projections.columns
     )
 
-def create_pca_scatter_plot(pca_components: pd.DataFrame, flip_x: bool = False, flip_y: bool = False) -> go.Figure:
+def create_pca_scatter_plots(pca_components: pd.DataFrame, participant_meta: pd.DataFrame, flip_x: bool = False, flip_y: bool = False) -> tuple[go.Figure, go.Figure]:
     """
     Create a scatter plot of the PCA components for visualization.
     Supports 2D and 3D projections.
@@ -281,14 +295,25 @@ def create_pca_scatter_plot(pca_components: pd.DataFrame, flip_x: bool = False, 
         flip_x: If True, flip the x-axis by multiplying by -1
         flip_y: If True, flip the y-axis by multiplying by -1
     """
-    return _create_scatter_plot(
+    pid_plot = _create_scatter_plot(
         data=pca_components,
         flip_x=flip_x,
         flip_y=flip_y,
         colorbar_title="Participant ID",
-        color_values=pca_components.index.astype(int),  # You can adjust this as needed
+        color_values=pd.Series(pca_components.index.astype(int)),
         title="Scaled Participant Projections"
     )
+
+    vote_count_plot = _create_scatter_plot(
+        data=pca_components,
+        flip_x=flip_x,
+        flip_y=flip_y,
+        colorbar_title="Vote Count",
+        color_values=participant_meta.loc[:, "n-votes"],
+        title="Scaled Participant Projections"
+    )
+
+    return pid_plot, vote_count_plot
 
 def create_participants_meta(raw_vote_matrix: pd.DataFrame, raw_comments: pd.DataFrame) -> pd.DataFrame:
     """
@@ -330,7 +355,11 @@ def create_participants_meta(raw_vote_matrix: pd.DataFrame, raw_comments: pd.Dat
 
     return participants_meta
 
-def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
+def create_vote_heatmap(
+    raw_vote_matrix: pd.DataFrame,
+    participant_mask: pd.Series,
+    statement_mask: pd.Series
+) -> go.Figure:
     """
     Create a plotly heatmap of the filtered vote matrix with custom color scheme:
     - Red (-1) for disagree
@@ -342,7 +371,13 @@ def create_vote_heatmap(filtered_matrix: pd.DataFrame) -> go.Figure:
     # the "drop" filter_type to generate to filtered matrix.
 
     # Create a copy of the matrix for display
-    display_matrix = filtered_matrix.copy()
+    display_matrix = _create_filtered_vote_matrix(
+        raw_vote_matrix=raw_vote_matrix,
+        statement_mask=statement_mask,
+        participant_mask=participant_mask,
+        filter_type="drop",
+    )
+
     display_matrix.sort_index(inplace=True, ascending=False)
 
     # Create custom colorscale (matching Polis website)

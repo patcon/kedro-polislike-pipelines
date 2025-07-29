@@ -10,15 +10,20 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(n.create_participants_meta, inputs=["raw_vote_matrix", "raw_comments"], outputs="raw_participants_meta", name="create_participants_meta"),
         node(n.make_participant_mask, inputs=["raw_vote_matrix", "params:min_votes_threshold"], outputs="participant_filter_mask", name="make_participant_mask"),
         node(n.make_statement_mask, inputs=["raw_comments", "params:strict_moderation"], outputs="statement_filter_mask", name="make_statement_mask"),
-        node(n.create_filtered_vote_matrix, inputs=["raw_vote_matrix", "participant_filter_mask", "statement_filter_mask"], outputs="filtered_vote_matrix", name="create_filtered_matrix"),
-        node(n.create_vote_heatmap, inputs="filtered_vote_matrix", outputs="vote_heatmap_fig", name="create_heatmap"),
+        node(n.make_filtered_vote_matrix, inputs=["raw_vote_matrix", "participant_filter_mask", "statement_filter_mask"], outputs="filtered_vote_matrix", name="create_filtered_matrix"),
+        node(n.create_vote_heatmap, inputs=["raw_vote_matrix", "participant_filter_mask", "statement_filter_mask"], outputs="vote_heatmap_fig", name="create_heatmap"),
         # node(n.save_heatmap_html, inputs="vote_heatmap_fig", outputs="heatmap_filepath", name="save_heatmap"),
 
         # PCA Subpipeline
         node(n.mean_impute_vote_matrix, inputs="filtered_vote_matrix", outputs="imputed_vote_matrix", name="mean_impute_matrix"),
         node(n.reduce_with_pca, inputs=["imputed_vote_matrix", "params:pca.n_components"], outputs="pca_components", name="reduce_with_pca"),
         node(n.apply_sparsity_aware_scaler, inputs=["pca_components", "filtered_vote_matrix"], outputs="scaled_pca_components", name="apply_sparsity_scaler"),
-        node(n.create_pca_scatter_plot, inputs=["scaled_pca_components", "params:pca.flip_x", "params:pca.flip_y"], outputs="pca_scatter_fig", name="create_pca_plot"),
+        node(
+            n.create_pca_scatter_plots,
+            inputs=["scaled_pca_components", "raw_participants_meta", "params:pca.flip_x", "params:pca.flip_y"],
+            outputs=["pca_scatter_fig_pids", "pca_scatter_fig_vote_counts"],
+            name="create_pca_plots",
+        ),
 
         # Polismath JSON reporting
         node(n.generate_polismath_json, inputs=["raw_vote_matrix", "raw_comments"], outputs="polismath_json", name="generate_polismath_json"),
