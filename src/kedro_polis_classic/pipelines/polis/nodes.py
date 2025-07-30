@@ -419,9 +419,11 @@ def create_vote_heatmap(
 
     return fig
 
+@ensure_series('participant_mask')
 def generate_polismath_json(
     raw_vote_matrix: pd.DataFrame,
-    raw_comments: pd.DataFrame
+    raw_comments: pd.DataFrame,
+    participant_mask: pd.Series,
 ) -> dict:
     """
     Generate polismath JSON structure with the required keys.
@@ -449,6 +451,8 @@ def generate_polismath_json(
             .to_dict(orient="records")
     )
     _, mod_in_statement_ids, mod_out_statement_ids, meta_statement_ids = process_statements(statement_data=remapped_comments)
+
+    participants_in_conv = participant_mask.loc[participant_mask].index.to_list()
 
     # Calculate user vote counts (non-NaN votes per participant)
     user_vote_counts = {}
@@ -483,7 +487,7 @@ def generate_polismath_json(
         "mod-out": mod_out_statement_ids,
         "group-votes": {},
         "lastModTimestamp": None,
-        "in-conv": [],
+        "in-conv": participants_in_conv,
         "tids": [],
         "lastVoteTimestamp": 0,
         "math_tick": 0

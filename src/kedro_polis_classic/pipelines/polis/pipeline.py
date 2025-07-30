@@ -25,7 +25,12 @@ def create_pipeline(**kwargs) -> Pipeline:
         ),
 
         # Polismath JSON reporting
-        node(n.generate_polismath_json, inputs=["raw_vote_matrix", "raw_comments"], outputs="polismath_json", name="generate_polismath_json"),
+        node(
+            n.generate_polismath_json,
+            inputs=["raw_vote_matrix", "raw_comments", "participant_filter_mask"],
+            outputs="polismath_json",
+            name="generate_polismath_json",
+        ),
 
         #node(n.cluster_kmeans, inputs="participant_projections", outputs="labels", name="kmeans_cluster"),
     ])
