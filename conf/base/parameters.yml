@@ -12,16 +12,16 @@ pca:
 
 polis_classic_dummy:
   imputer:
-    name: "SimpleImputer"
-    strategy: "mean"
+    name: SimpleImputer
+    strategy: mean
 
   reducer:
-    name: "PCA"
+    name: PCA
     n_components: 2
 
   scaler:
-    name: "FunctionTransformer"
+    name: FunctionTransformer
 
   clusterer:
-    name: "KMeans"
+    name: KMeans
     n_clusters: 3
