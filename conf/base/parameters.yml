@@ -10,18 +10,19 @@ pca:
   flip_x: true
   flip_y: false
 
-polis_classic_dummy:
-  imputer:
-    name: SimpleImputer
-    strategy: mean
+pipelines:
+  polis_classic_dummy:
+    imputer:
+      name: SimpleImputer
+      strategy: mean
 
-  reducer:
-    name: PCA
-    n_components: 2
+    reducer:
+      name: PCA
+      n_components: 2
 
-  scaler:
-    name: FunctionTransformer
+    scaler:
+      name: FunctionTransformer
 
-  clusterer:
-    name: KMeans
-    n_clusters: 3
+    clusterer:
+      name: KMeans
+      n_clusters: 3

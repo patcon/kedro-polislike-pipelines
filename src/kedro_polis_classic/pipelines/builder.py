@@ -2,7 +2,7 @@ from sklearn.pipeline import Pipeline
 from .registry import ComponentRegistry
 
 
-def build_pipeline_from_params(params):
+def build_pipeline_from_params(params: dict) -> Pipeline:
     steps = []
     for step_name in ["imputer", "reducer", "scaler", "clusterer"]:
         step_config = params[step_name]
