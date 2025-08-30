@@ -21,7 +21,7 @@ pipelines:
       n_components: 2
 
     scaler:
-      name: FunctionTransformer
+      name: NoOpScaler
 
     clusterer:
       name: KMeans
