@@ -1,11 +1,16 @@
 from ..builder import build_pipeline_from_params
+import copy
 
 
 def run_component_node(X, params, step_name):
     """
-    Run a single pipeline step while passing full params dict.
-    This allows Kedro-viz to show all sub-parameters.
+    Runs a single pipeline component.
+    X: input features
+    params: full nested pipeline parameters dict
+    step_name: which step to build (imputer/reducer/scaler/clusterer)
     """
-    step_config = params[step_name]
+    # copy to avoid mutating params
+    step_config = copy.deepcopy(params[step_name])
     pipeline = build_pipeline_from_params({step_name: step_config})
+
     return pipeline.fit_transform(X)
