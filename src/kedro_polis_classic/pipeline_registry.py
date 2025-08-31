@@ -6,7 +6,7 @@ from .pipelines.experimental import pipeline as experiment_pipeline
 def register_pipelines() -> dict[str, Pipeline]:
     return {
         "polis": polis_pipeline.create_pipeline(),
-        "polis_classic_dummy": experiment_pipeline.create_pipeline("polis_classic_dummy"),
+        "polis_classic": experiment_pipeline.create_pipeline("polis_classic"),
         "knn_pacmap_kmeans": experiment_pipeline.create_pipeline("knn_pacmap_kmeans"),
         "__default__": polis_pipeline.create_pipeline(),
     }
