@@ -56,15 +56,6 @@ def noop_scaler_factory(**kwargs):
     return FunctionTransformer(**kwargs)
 
 
-@ComponentRegistry.register("StandardScaler")
-def standard_scaler_factory(**kwargs):
-    from sklearn.preprocessing import StandardScaler
-
-    defaults: dict = dict()
-    defaults.update(kwargs)
-    return StandardScaler(**kwargs)
-
-
 # Clusterers
 @ComponentRegistry.register("KMeans")
 def kmeans_clusterer_factory(**kwargs):
@@ -75,7 +66,7 @@ def kmeans_clusterer_factory(**kwargs):
     return KMeans(**kwargs)
 
 
-@ComponentRegistry.register("DBSCAN")
+@ComponentRegistry.register("HDBSCAN")
 def hbscan_clusterer_factory(**kwargs):
     from hdbscan import HDBSCAN
 
