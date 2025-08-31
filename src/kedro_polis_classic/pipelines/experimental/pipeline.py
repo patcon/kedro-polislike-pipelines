@@ -9,7 +9,7 @@ from .nodes import (
 )
 
 
-def create_pipeline(pipeline_key="polis_classic_dummy") -> Pipeline:
+def create_pipeline(pipeline_key) -> Pipeline:
     nodes = []
 
     # Data loading nodes

@@ -1,5 +1,5 @@
 pipelines:
-  polis_classic_dummy:
+  polis_classic:
     imputer:
       name: SimpleImputer
       strategy: mean
