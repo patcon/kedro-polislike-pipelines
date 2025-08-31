@@ -6,6 +6,8 @@ from .registry import ComponentRegistry
 def simple_imputer_factory(**kwargs):
     from sklearn.impute import SimpleImputer
 
+    defaults: dict = dict()
+    defaults.update(kwargs)
     return SimpleImputer(**kwargs)
 
 
@@ -13,6 +15,8 @@ def simple_imputer_factory(**kwargs):
 def knn_imputer_factory(**kwargs):
     from sklearn.impute import KNNImputer
 
+    defaults: dict = dict()
+    defaults.update(kwargs)
     return KNNImputer(**kwargs)
 
 
@@ -21,6 +25,8 @@ def knn_imputer_factory(**kwargs):
 def pca_reducer_factory(**kwargs):
     from sklearn.decomposition import PCA
 
+    defaults: dict = dict()
+    defaults.update(kwargs)
     return PCA(**kwargs)
 
 
@@ -28,13 +34,17 @@ def pca_reducer_factory(**kwargs):
 def pacmap_reducer_factory(**kwargs):
     from pacmap import PaCMAP
 
-    return PaCMAP(**kwargs)
+    defaults: dict = dict(n_neighbors=None)
+    defaults.update(kwargs)
+    return PaCMAP(**defaults)
 
 
 @ComponentRegistry.register("LocalMAP")
 def localmap_reducer_factory(**kwargs):
     from pacmap import LocalMAP
 
+    defaults: dict = dict(n_neighbors=None)
+    defaults.update(kwargs)
     return LocalMAP(**kwargs)
 
 
@@ -50,6 +60,8 @@ def noop_scaler_factory(**kwargs):
 def standard_scaler_factory(**kwargs):
     from sklearn.preprocessing import StandardScaler
 
+    defaults: dict = dict()
+    defaults.update(kwargs)
     return StandardScaler(**kwargs)
 
 
@@ -58,6 +70,8 @@ def standard_scaler_factory(**kwargs):
 def kmeans_clusterer_factory(**kwargs):
     from sklearn.cluster import KMeans
 
+    defaults: dict = dict()
+    defaults.update(kwargs)
     return KMeans(**kwargs)
 
 
@@ -65,4 +79,6 @@ def kmeans_clusterer_factory(**kwargs):
 def hbscan_clusterer_factory(**kwargs):
     from hdbscan import HDBSCAN
 
+    defaults: dict = dict()
+    defaults.update(kwargs)
     return HDBSCAN(**kwargs)
