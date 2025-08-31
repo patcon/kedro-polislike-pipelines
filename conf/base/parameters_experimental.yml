@@ -14,3 +14,21 @@ pipelines:
     clusterer:
       name: KMeans
       n_clusters: 5
+
+  knn_pacmap_kmeans:
+    imputer:
+      name: KNNImputer
+      n_neighbors: 5
+      weights: distance
+
+    reducer:
+      name: PaCMAP
+      n_components: 2
+      n_neighbors: null
+
+    scaler:
+      name: NoOpScaler
+
+    clusterer:
+      name: KMeans
+      n_clusters: 5
