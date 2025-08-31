@@ -16,7 +16,7 @@ def register_pipelines() -> dict[str, Pipeline]:
     # Create base pipelines
     pipelines = {
         "polis": polis_pipeline.create_pipeline(),
-        "polis_classic": experiment_pipeline.create_pipeline("mean_pca_kmeans"),
+        "polis_classic": experiment_pipeline.create_pipeline("mean_pca_bestkmeans"),
         "__default__": polis_pipeline.create_pipeline(),
     }
 

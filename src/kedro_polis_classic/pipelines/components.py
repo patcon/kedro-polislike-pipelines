@@ -66,6 +66,15 @@ def kmeans_clusterer_factory(**kwargs):
     return KMeans(**kwargs)
 
 
+@ComponentRegistry.register("BestKMeans")
+def best_kmeans_clusterer_factory(**kwargs):
+    from kedro_polis_classic.sklearn.cluster import BestKMeans
+
+    defaults: dict = dict()
+    defaults.update(kwargs)
+    return BestKMeans(**kwargs)
+
+
 @ComponentRegistry.register("HDBSCAN")
 def hbscan_clusterer_factory(**kwargs):
     from hdbscan import HDBSCAN

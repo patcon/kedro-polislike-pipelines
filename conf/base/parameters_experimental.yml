@@ -3,7 +3,7 @@ visualization:
   flip_y: false
 
 pipelines:
-  mean_pca_kmeans:
+  mean_pca_bestkmeans:
     imputer:
       name: SimpleImputer
       strategy: mean
@@ -16,8 +16,8 @@ pipelines:
       name: NoOpScaler
 
     clusterer:
-      name: KMeans
-      n_clusters: 5
+      name: BestKMeans
+      k_bounds: [2, 5]
 
   mean_pacmap_kmeans:
     imputer:
