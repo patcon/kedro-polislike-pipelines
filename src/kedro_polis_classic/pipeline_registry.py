@@ -1,22 +1,18 @@
 from kedro.pipeline import Pipeline
+from kedro.config import OmegaConfigLoader
 from .pipelines.polis import pipeline as polis_pipeline
 from .pipelines.experimental import pipeline as experiment_pipeline
 
 
 def register_pipelines() -> dict[str, Pipeline]:
-    # List of experimental pipeline names
-    experimental_pipeline_names = [
-        "mean_pca_kmeans",
-        "mean_pacmap_kmeans",
-        "mean_pacmap_hdbscan",
-        "mean_localmap_kmeans",
-        "mean_localmap_hdbscan",
-        "knn_pacmap_kmeans",
-        "knn5d_pacmap_hdbscan",
-        "knn_localmap_kmeans",
-        "knn_localmap_hdbscan",
-    ]
+    # Load configuration to get experimental pipeline names dynamically
+    config_loader = OmegaConfigLoader(
+        conf_source="conf", base_env="base", default_run_env="local"
+    )
 
+    # Load parameters to get pipeline keys from parameters_experimental.yml
+    params = config_loader["parameters"]
+    experimental_pipeline_names = list(params.get("pipelines", {}).keys())
     # Create base pipelines
     pipelines = {
         "polis": polis_pipeline.create_pipeline(),
