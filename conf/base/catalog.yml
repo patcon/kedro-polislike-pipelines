@@ -132,3 +132,14 @@ polismath_json:
 
 labels:
   type: MemoryDataset
+
+labels_dataframe:
+  type: pandas.CSVDataset
+  filepath: data/03_primary/labels.csv
+  save_args:
+    index: false
+  metadata:
+    kedro-viz:
+      layer: primary
+      preview_args:
+        nrows: 10

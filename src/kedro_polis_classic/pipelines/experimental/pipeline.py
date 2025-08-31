@@ -5,6 +5,7 @@ from .nodes import (
     split_raw_data,
     dedup_votes,
     make_raw_vote_matrix,
+    create_labels_dataframe,
 )
 
 
@@ -58,5 +59,15 @@ def create_pipeline(pipeline_key="polis_classic_dummy") -> Pipeline:
             )
         )
         prev_output = f"{step}_output"
+
+    # Add labels processing node
+    nodes.append(
+        node(
+            func=create_labels_dataframe,
+            inputs=["clusterer_output", "raw_vote_matrix"],
+            outputs="labels_dataframe",
+            name="create_labels_dataframe",
+        )
+    )
 
     return Pipeline(nodes)

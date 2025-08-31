@@ -15,7 +15,11 @@ def run_component_node(X, params, step_name):
     step_config = copy.deepcopy(params[step_name])
     pipeline = build_pipeline_from_params({step_name: step_config})
 
-    return pipeline.fit_transform(X)
+    # For clusterer, use fit_predict to get labels instead of fit_transform
+    if step_name == "clusterer":
+        return pipeline.fit_predict(X)
+    else:
+        return pipeline.fit_transform(X)
 
 
 # Minimal data loader nodes from original polis pipeline
@@ -53,3 +57,42 @@ def make_raw_vote_matrix(deduped_votes: pd.DataFrame) -> pd.DataFrame:
     matrix = matrix.astype("Int64")
 
     return matrix
+
+
+def create_labels_dataframe(
+    clusterer_output, raw_vote_matrix: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Create labels dataframe from clusterer output and raw vote matrix.
+
+    Args:
+        clusterer_output: Output from the clusterer (numpy array of labels)
+        raw_vote_matrix: Raw vote matrix with participant IDs as index
+
+    Returns:
+        DataFrame with participant_id and label columns
+    """
+    import numpy as np
+
+    # Convert clusterer output to numpy array if it isn't already
+    if not isinstance(clusterer_output, np.ndarray):
+        labels = np.array(clusterer_output)
+    else:
+        labels = clusterer_output
+
+    # Flatten the labels array to ensure it's 1-dimensional
+    labels = labels.flatten()
+
+    # Get participant IDs from the raw vote matrix index
+    participant_ids = raw_vote_matrix.index.tolist()
+
+    # Ensure the lengths match
+    if len(labels) != len(participant_ids):
+        raise ValueError(
+            f"Length mismatch: {len(labels)} labels vs {len(participant_ids)} participants"
+        )
+
+    # Create the labels dataframe
+    labels_df = pd.DataFrame({"participant_id": participant_ids, "label": labels})
+
+    return labels_df
