@@ -8,5 +8,6 @@ def register_pipelines() -> dict[str, Pipeline]:
         "polis": polis_pipeline.create_pipeline(),
         "polis_classic": experiment_pipeline.create_pipeline("polis_classic"),
         "knn_pacmap_kmeans": experiment_pipeline.create_pipeline("knn_pacmap_kmeans"),
+        "knn_localmap_kmeans": experiment_pipeline.create_pipeline("knn_localmap_kmeans"),
         "__default__": polis_pipeline.create_pipeline(),
     }
