@@ -143,3 +143,17 @@ labels_dataframe:
       layer: primary
       preview_args:
         nrows: 10
+
+# Experimental pipeline outputs
+scaler_output:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+scaler_scatter_plot:
+  type: plotly.JSONDataset
+  filepath: data/08_reporting/scaler_scatter_plot.json
+  metadata:
+    kedro-viz:
+      layer: reporting

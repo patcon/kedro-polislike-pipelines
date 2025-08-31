@@ -1,6 +1,7 @@
 from ..builder import build_pipeline_from_params
-import copy
 import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
 
 
@@ -96,3 +97,193 @@ def create_labels_dataframe(
     labels_df = pd.DataFrame({"participant_id": participant_ids, "label": labels})
 
     return labels_df
+
+
+def _create_scatter_plot(
+    data: pd.DataFrame,
+    flip_x: bool,
+    flip_y: bool,
+    colorbar_title: str,
+    color_values: pd.Series,
+    title: str,
+    use_categorical_colors: bool = False,
+) -> go.Figure:
+    """
+    Simplified helper function to create a 2D or 3D scatter plot using plotly express.
+
+    Args:
+        data: DataFrame with data for plotting
+        flip_x: If True, flip the x-axis by multiplying by -1
+        flip_y: If True, flip the y-axis by multiplying by -1
+        colorbar_title: Title for the colorbar
+        color_values: Data for the marker color
+        title: Title for the plot
+        use_categorical_colors: If True, use categorical color scale (good for clusters)
+
+    Returns:
+        A Plotly figure (2D or 3D scatter plot)
+    """
+    import numpy as np
+
+    # Create a copy of the data to avoid modifying the original
+    plot_data = data.copy()
+
+    # Get column names
+    x_col = plot_data.columns[0]
+    y_col = plot_data.columns[1]
+
+    # Apply flipping if requested
+    if flip_x:
+        plot_data[x_col] = plot_data[x_col] * -1
+    if flip_y:
+        plot_data[y_col] = plot_data[y_col] * -1
+
+    # Add color values to the dataframe for plotly express
+    plot_data[colorbar_title] = color_values
+
+    # Add participant labels for hover
+    plot_data["Participant"] = [f"Participant {idx}" for idx in range(len(plot_data))]
+
+    # Check for 2D or 3D plot based on column count
+    if len(data.columns) == 3:
+        # 3D scatter plot
+        z_col = plot_data.columns[2]
+
+        if use_categorical_colors:
+            # Use discrete colors for categorical data
+            fig = px.scatter_3d(
+                plot_data,
+                x=x_col,
+                y=y_col,
+                z=z_col,
+                color=colorbar_title,
+                hover_name="Participant",
+                title=title,
+                color_discrete_sequence=px.colors.qualitative.Set1,
+            )
+        else:
+            # Use continuous color scale
+            fig = px.scatter_3d(
+                plot_data,
+                x=x_col,
+                y=y_col,
+                z=z_col,
+                color=colorbar_title,
+                hover_name="Participant",
+                title=title,
+                color_continuous_scale="Viridis",
+            )
+
+        # Update axis labels
+        fig.update_layout(
+            scene=dict(
+                xaxis_title=f"{str(x_col).upper()} Component",
+                yaxis_title=f"{str(y_col).upper()} Component",
+                zaxis_title=f"{str(z_col).upper()} Component",
+            ),
+            width=800,
+            height=600,
+        )
+
+    elif len(data.columns) == 2:
+        # 2D scatter plot
+        if use_categorical_colors:
+            # Use discrete colors for categorical data
+            fig = px.scatter(
+                plot_data,
+                x=x_col,
+                y=y_col,
+                color=colorbar_title,
+                hover_name="Participant",
+                title=title,
+                color_discrete_sequence=px.colors.qualitative.Set1,
+            )
+        else:
+            # Use continuous color scale
+            fig = px.scatter(
+                plot_data,
+                x=x_col,
+                y=y_col,
+                color=colorbar_title,
+                hover_name="Participant",
+                title=title,
+                color_continuous_scale="Viridis",
+            )
+
+        # Update axis labels and layout
+        fig.update_layout(
+            xaxis_title=f"{str(x_col).upper()} Component",
+            yaxis_title=f"{str(y_col).upper()} Component",
+            width=800,
+            height=600,
+            plot_bgcolor="white",
+        )
+
+    else:
+        raise ValueError("Data must have exactly 2 or 3 columns for 2D or 3D plots.")
+
+    # Update marker size for better visibility
+    fig.update_traces(marker=dict(size=8 if len(data.columns) == 2 else 6))
+
+    return fig
+
+
+def create_scaler_scatter_plot(
+    scaler_output,  # Can be numpy array or DataFrame
+    clusterer_output,  # Cluster labels
+    flip_x: bool = False,
+    flip_y: bool = False,
+) -> go.Figure:
+    """
+    Create a scatter plot of the scaler output for visualization.
+    Supports 2D and 3D projections.
+    Adapted from polis pipeline create_pca_scatter_plots node.
+
+    Args:
+        scaler_output: Numpy array or DataFrame with scaled components from the experimental pipeline
+        clusterer_output: Cluster labels for coloring the points
+        flip_x: If True, flip the x-axis by multiplying by -1
+        flip_y: If True, flip the y-axis by multiplying by -1
+
+    Returns:
+        Plotly figure showing the scatter plot
+    """
+    import numpy as np
+
+    # Convert numpy array to DataFrame if needed
+    if isinstance(scaler_output, np.ndarray):
+        # Create generic column names based on dimensions
+        n_components = scaler_output.shape[1] if len(scaler_output.shape) > 1 else 1
+        if n_components <= 3:
+            column_names = ["x", "y", "z"][:n_components]
+        else:
+            column_names = [f"PC{i + 1}" for i in range(n_components)]
+
+        # Create DataFrame with generic participant IDs
+        data = pd.DataFrame(
+            scaler_output,
+            index=range(len(scaler_output)),
+            columns=pd.Index(column_names),
+        )
+    else:
+        # Already a DataFrame
+        data = scaler_output
+
+    # Convert cluster labels to pandas Series of strings for categorical coloring
+    if isinstance(clusterer_output, np.ndarray):
+        cluster_labels = pd.Series(clusterer_output.flatten()).astype(str)
+    else:
+        cluster_labels = pd.Series(clusterer_output).astype(str)
+
+    # Create scatter plot colored by cluster labels
+    scatter_plot = _create_scatter_plot(
+        data=data,
+        flip_x=flip_x,
+        flip_y=flip_y,
+        colorbar_title="Cluster",
+        color_values=cluster_labels,
+        title="Experimental Pipeline: Scaled Participant Projections (Colored by Cluster)",
+        use_categorical_colors=True,
+    )
+
+    return scatter_plot
