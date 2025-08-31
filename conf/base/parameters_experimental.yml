@@ -3,7 +3,7 @@ visualization:
   flip_y: false
 
 pipelines:
-  polis_classic:
+  mean_pca_kmeans:
     imputer:
       name: SimpleImputer
       strategy: mean
