@@ -12,7 +12,7 @@ def run_component_node(X, params, step_name):
     step_name: which step to build (imputer/reducer/scaler/clusterer)
     """
     # copy to avoid mutating params
-    step_config = copy.deepcopy(params[step_name])
+    step_config = params
     pipeline = build_pipeline_from_params({step_name: step_config})
 
     # For clusterer, use fit_predict to get labels instead of fit_transform
