@@ -8,9 +8,13 @@ def register_pipelines() -> dict[str, Pipeline]:
     experimental_pipeline_names = [
         "mean_pca_kmeans",
         "mean_pacmap_kmeans",
+        "mean_pacmap_hdbscan",
         "mean_localmap_kmeans",
+        "mean_localmap_hdbscan",
         "knn_pacmap_kmeans",
+        "knn5d_pacmap_hdbscan",
         "knn_localmap_kmeans",
+        "knn_localmap_hdbscan",
     ]
 
     # Create base pipelines

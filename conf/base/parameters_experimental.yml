@@ -36,6 +36,39 @@ pipelines:
       name: KMeans
       n_clusters: 5
 
+  mean_pacmap_hdbscan:
+    imputer:
+      name: SimpleImputer
+      strategy: mean
+
+    reducer:
+      name: PaCMAP
+      n_components: 2
+      n_neighbors: null
+
+    scaler:
+      name: NoOpScaler
+
+    clusterer:
+      name: HDBSCAN
+
+  knn5d_pacmap_hdbscan:
+    imputer:
+      name: KNNImputer
+      n_neighbors: 5
+      weights: distance
+
+    reducer:
+      name: PaCMAP
+      n_components: 2
+      n_neighbors: null
+
+    scaler:
+      name: NoOpScaler
+
+    clusterer:
+      name: HDBSCAN
+
   knn_pacmap_kmeans: &knn_pacmap_kmeans
     imputer:
       name: KNNImputer
