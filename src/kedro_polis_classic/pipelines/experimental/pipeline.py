@@ -53,7 +53,7 @@ def create_pipeline(pipeline_key="polis_classic_dummy") -> Pipeline:
                 func=lambda X, params, step_name=step: run_component_node(
                     X, params, step_name
                 ),
-                inputs=[prev_output, f"params:pipelines.{pipeline_key}"],
+                inputs=[prev_output, f"params:pipelines.{pipeline_key}.{step}"],
                 outputs=f"{step}_output",
                 name=f"{step}_node",
             )
