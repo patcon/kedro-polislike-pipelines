@@ -9,20 +9,3 @@ pca:
   n_components: 2
   flip_x: true
   flip_y: false
-
-pipelines:
-  polis_classic_dummy:
-    imputer:
-      name: SimpleImputer
-      strategy: mean
-
-    reducer:
-      name: PCA
-      n_components: 2
-
-    scaler:
-      name: NoOpScaler
-
-    clusterer:
-      name: KMeans
-      n_clusters: 5

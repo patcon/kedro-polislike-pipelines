@@ -1,0 +1,16 @@
+pipelines:
+  polis_classic_dummy:
+    imputer:
+      name: SimpleImputer
+      strategy: mean
+
+    reducer:
+      name: PCA
+      n_components: 2
+
+    scaler:
+      name: NoOpScaler
+
+    clusterer:
+      name: KMeans
+      n_clusters: 5
