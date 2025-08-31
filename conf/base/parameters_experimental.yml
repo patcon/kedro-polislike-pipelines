@@ -52,6 +52,23 @@ pipelines:
     clusterer:
       name: HDBSCAN
 
+  mean_localmap_bestkmeans:
+    imputer:
+      name: SimpleImputer
+      strategy: mean
+
+    reducer:
+      name: LocalMAP
+      n_components: 2
+      n_neighbors: null
+
+    scaler:
+      name: NoOpScaler
+
+    clusterer:
+      name: BestKMeans
+      k_bounds: [2, 10]
+
   knn5d_pacmap_hdbscan:
     imputer:
       name: KNNImputer

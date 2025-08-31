@@ -1,4 +1,6 @@
 - [ ] mask out mod-out statements
 - [ ] filter out below-vote-threshold participants
-- [ ] add BestKMeans estimator
+- [x] add BestKMeans estimator
+- [ ] add HDBSCANFlat estimator
+- [ ] add BestHDBSCANFlat estimator
 - [ ] add SparsityAwareScaler estimator

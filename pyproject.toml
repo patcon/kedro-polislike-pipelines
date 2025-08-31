@@ -7,6 +7,7 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "kedro>=0.19.8",
+    "pacmap",
     "kedro-datasets[pandas]>=4.1.0",
     "kedro-viz>=12.0.0",
     "red-dwarf",
