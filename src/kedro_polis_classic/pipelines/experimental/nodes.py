@@ -107,6 +107,7 @@ def _create_scatter_plot(
     color_values: pd.Series,
     title: str,
     use_categorical_colors: bool = False,
+    category_orders: dict | None = None,
 ) -> go.Figure:
     """
     Simplified helper function to create a 2D or 3D scatter plot using plotly express.
@@ -151,16 +152,20 @@ def _create_scatter_plot(
 
         if use_categorical_colors:
             # Use discrete colors for categorical data
-            fig = px.scatter_3d(
-                plot_data,
-                x=x_col,
-                y=y_col,
-                z=z_col,
-                color=colorbar_title,
-                hover_name="Participant",
-                title=title,
-                color_discrete_sequence=px.colors.qualitative.Set1,
-            )
+            kwargs = {
+                "data_frame": plot_data,
+                "x": x_col,
+                "y": y_col,
+                "z": z_col,
+                "color": colorbar_title,
+                "hover_name": "Participant",
+                "title": title,
+                "color_discrete_sequence": px.colors.qualitative.Set1,
+            }
+            if category_orders is not None:
+                kwargs["category_orders"] = category_orders
+
+            fig = px.scatter_3d(**kwargs)
         else:
             # Use continuous color scale
             fig = px.scatter_3d(
@@ -189,15 +194,19 @@ def _create_scatter_plot(
         # 2D scatter plot
         if use_categorical_colors:
             # Use discrete colors for categorical data
-            fig = px.scatter(
-                plot_data,
-                x=x_col,
-                y=y_col,
-                color=colorbar_title,
-                hover_name="Participant",
-                title=title,
-                color_discrete_sequence=px.colors.qualitative.Set1,
-            )
+            kwargs = {
+                "data_frame": plot_data,
+                "x": x_col,
+                "y": y_col,
+                "color": colorbar_title,
+                "hover_name": "Participant",
+                "title": title,
+                "color_discrete_sequence": px.colors.qualitative.Set1,
+            }
+            if category_orders is not None:
+                kwargs["category_orders"] = category_orders
+
+            fig = px.scatter(**kwargs)
         else:
             # Use continuous color scale
             fig = px.scatter(
@@ -271,9 +280,16 @@ def create_scaler_scatter_plot(
 
     # Convert cluster labels to pandas Series of strings for categorical coloring
     if isinstance(clusterer_output, np.ndarray):
-        cluster_labels = pd.Series(clusterer_output.flatten()).astype(str)
+        cluster_labels = pd.Series(clusterer_output.flatten())
     else:
-        cluster_labels = pd.Series(clusterer_output).astype(str)
+        cluster_labels = pd.Series(clusterer_output)
+
+    # Sort unique cluster labels numerically to ensure proper legend ordering
+    unique_labels = sorted(cluster_labels.unique())
+    cluster_labels = cluster_labels.astype(str)
+
+    # Create category orders for plotly express
+    category_orders = {"Cluster": [str(label) for label in unique_labels]}
 
     # Create scatter plot colored by cluster labels
     scatter_plot = _create_scatter_plot(
@@ -284,6 +300,7 @@ def create_scaler_scatter_plot(
         color_values=cluster_labels,
         title="Experimental Pipeline: Scaled Participant Projections (Colored by Cluster)",
         use_categorical_colors=True,
+        category_orders=category_orders,
     )
 
     return scatter_plot
