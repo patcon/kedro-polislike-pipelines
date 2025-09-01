@@ -1,19 +1,19 @@
-# An example workflow configuration assuming your kedro project is 
+# An example workflow configuration assuming your kedro project is
 # at the root directory
 
 # The name of your workflow
-name: Publish and share Kedro Viz 
+name: Publish and share Kedro Viz
 
-on: 
+on:
   push:
     branches:
       - main
   workflow_dispatch:
 
-jobs: 
+jobs:
   build:
     # The action is currently tested on ubuntu-latest (Recommended)
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
     steps:
       - name: Fetch the repository
         uses: actions/checkout@v4
@@ -31,8 +31,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
-      - name: Run pipeline
-        run: uv run kedro run
+      - name: Run all pipelines
+        run: uv run python scripts/run_pipelines.py --all
 
       - name: Build Kedro-Viz site
         run: |
@@ -42,14 +42,14 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/
-  
+
   deploy:
     needs: build
     permissions:
-      # The pages and id-token write permissions are required to use 
-      # the action if your GitHub publishing source is a custom 
+      # The pages and id-token write permissions are required to use
+      # the action if your GitHub publishing source is a custom
       # GitHub Actions workflow
-      pages: write 
+      pages: write
       id-token: write
 
     # Deploy to the github-pages environment
