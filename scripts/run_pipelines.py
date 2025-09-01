@@ -94,10 +94,10 @@ def filter_pipelines(requested: List[str], available: Set[str]) -> List[str]:
     return unique_pipelines
 
 
-def run_pipeline(pipeline_name: str, params: str | None = None) -> bool:
+def run_pipeline(pipeline_name: str, current: int, total: int, params: str | None = None) -> bool:
     """Run a single pipeline using kedro run command."""
     print(f"\n{'=' * 60}")
-    print(f"Running pipeline: {pipeline_name}")
+    print(f"Running pipeline ({current}/{total}): {pipeline_name}")
     if params:
         print(f"With parameters: {params}")
     print(f"{'=' * 60}")
@@ -212,8 +212,9 @@ Examples:
     successful_runs = 0
     failed_runs = 0
 
-    for pipeline in pipelines_to_run:
-        success = run_pipeline(pipeline, args.params)
+    total_pipelines = len(pipelines_to_run)
+    for i, pipeline in enumerate(pipelines_to_run, 1):
+        success = run_pipeline(pipeline, i, total_pipelines, args.params)
         if success:
             successful_runs += 1
         else:
