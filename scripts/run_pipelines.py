@@ -121,17 +121,20 @@ def run_pipeline(pipeline_name: str, params: str | None = None) -> bool:
 
 
 def launch_viz() -> None:
-    """Launch Kedro Viz."""
+    """Launch Kedro Viz and keep it running."""
     print(f"\n{'=' * 60}")
     print("Launching Kedro Viz...")
+    print("Press Ctrl+C to stop Kedro Viz and exit")
     print(f"{'=' * 60}")
 
     cmd = ["kedro", "viz", "--autoreload"]
 
     try:
-        # Use Popen to launch viz in background-like mode
-        subprocess.Popen(cmd, cwd=Path(__file__).parent.parent)
-        print("🚀 Kedro Viz launched! Check your browser at http://localhost:4141")
+        # Use subprocess.run to keep the process running in foreground
+        print("🚀 Starting Kedro Viz... Check your browser at http://localhost:4141")
+        subprocess.run(cmd, cwd=Path(__file__).parent.parent)
+    except KeyboardInterrupt:
+        print("\n🛑 Kedro Viz stopped by user")
     except FileNotFoundError:
         print(
             "❌ Error: 'kedro' command not found. Make sure Kedro is installed and in your PATH."
