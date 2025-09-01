@@ -81,7 +81,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
                 "params:visualization.flip_x",
                 "params:visualization.flip_y",
             ],
-            outputs="scaler_scatter_plot",
+            outputs=f"{pipeline_key}.scaler_scatter_plot",
             name="create_scatter_plot",
         )
     )

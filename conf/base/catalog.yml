@@ -151,9 +151,9 @@ scaler_output:
     kedro-viz:
       layer: feature
 
-scaler_scatter_plot:
+"{pipeline_name}.scaler_scatter_plot":
   type: plotly.JSONDataset
-  filepath: data/08_reporting/scaler_scatter_plot.json
+  filepath: data/{pipeline_name}/08_reporting/scaler_scatter_plot.json
   metadata:
     kedro-viz:
       layer: reporting
