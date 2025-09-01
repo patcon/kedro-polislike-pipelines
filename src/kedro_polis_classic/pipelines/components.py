@@ -82,3 +82,22 @@ def hbscan_clusterer_factory(**kwargs):
     defaults: dict = dict()
     defaults.update(kwargs)
     return HDBSCAN(**kwargs)
+
+
+@ComponentRegistry.register("HDBSCANFlat")
+def hbscanflat_clusterer_factory(**kwargs):
+    from ..sklearn.cluster import HDBSCANFlat
+
+    defaults: dict = dict()
+    defaults.update(kwargs)
+    print(kwargs)
+    return HDBSCANFlat(**kwargs)
+
+
+@ComponentRegistry.register("BestHDBSCANFlat")
+def besthbscanflat_clusterer_factory(**kwargs):
+    from ..sklearn.cluster import BestHDBSCANFlat
+
+    defaults: dict = dict()
+    defaults.update(kwargs)
+    return BestHDBSCANFlat(**kwargs)

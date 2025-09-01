@@ -36,7 +36,7 @@ pipelines:
       name: KMeans
       n_clusters: 5
 
-  mean_pacmap_hdbscan:
+  mean_pacmap_hdbscanflat:
     imputer:
       name: SimpleImputer
       strategy: mean
@@ -50,7 +50,26 @@ pipelines:
       name: NoOpScaler
 
     clusterer:
-      name: HDBSCAN
+      name: HDBSCANFlat
+      n_clusters: 8
+      min_cluster_size: 20
+
+  mean_localmap_besthdbscanflat:
+    imputer:
+      name: SimpleImputer
+      strategy: mean
+
+    reducer:
+      name: LocalMAP
+      n_components: 2
+      n_neighbors: null
+
+    scaler:
+      name: NoOpScaler
+
+    clusterer:
+      name: BestHDBSCANFlat
+      k_bounds: [2, 10]
 
   mean_localmap_bestkmeans:
     imputer:
@@ -69,7 +88,7 @@ pipelines:
       name: BestKMeans
       k_bounds: [2, 10]
 
-  knn5d_pacmap_hdbscan:
+  knn5d_pacmap_besthdbscanflat:
     imputer:
       name: KNNImputer
       n_neighbors: 5
@@ -84,7 +103,8 @@ pipelines:
       name: NoOpScaler
 
     clusterer:
-      name: HDBSCAN
+      name: BestHDBSCANFlat
+      k_bounds: [2, 10]
 
   knn5d_pacmap_kmeans: &knn_pacmap_kmeans
     imputer:

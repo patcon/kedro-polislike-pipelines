@@ -12,6 +12,7 @@ dependencies = [
     "kedro-viz>=12.0.0",
     "red-dwarf",
     "scikit-learn>=1.6.1",
+    "hdbscan>=0.8.40",
 ]
 
 [build-system]
