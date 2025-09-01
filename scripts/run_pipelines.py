@@ -93,13 +93,17 @@ def filter_pipelines(requested: List[str], available: Set[str]) -> List[str]:
     return unique_pipelines
 
 
-def run_pipeline(pipeline_name: str) -> bool:
+def run_pipeline(pipeline_name: str, params: str | None = None) -> bool:
     """Run a single pipeline using kedro run command."""
     print(f"\n{'=' * 60}")
     print(f"Running pipeline: {pipeline_name}")
+    if params:
+        print(f"With parameters: {params}")
     print(f"{'=' * 60}")
 
     cmd = ["kedro", "run", "--pipeline", pipeline_name]
+    if params:
+        cmd.extend(["--params", params])
 
     try:
         result = subprocess.run(cmd, check=True, cwd=Path(__file__).parent.parent)
@@ -145,6 +149,7 @@ Examples:
   python scripts/run_pipelines.py --all --launch-viz
   python scripts/run_pipelines.py polis,mean_pca_bestkmeans
   python scripts/run_pipelines.py mean_pacmap_kmeans --launch-viz
+  python scripts/run_pipelines.py besthdbscanflat --params "param1:value1,param2:value2"
         """,
     )
 
@@ -162,6 +167,11 @@ Examples:
         "--launch-viz",
         action="store_true",
         help="Launch Kedro Viz after running pipelines",
+    )
+    parser.add_argument(
+        "--params",
+        type=str,
+        help="Parameters to pass to kedro run (e.g., 'param1:value1,param2:value2')",
     )
 
     args = parser.parse_args()
@@ -199,7 +209,7 @@ Examples:
     failed_runs = 0
 
     for pipeline in pipelines_to_run:
-        success = run_pipeline(pipeline)
+        success = run_pipeline(pipeline, args.params)
         if success:
             successful_runs += 1
         else:
