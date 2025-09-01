@@ -89,6 +89,7 @@ pipelines:
       name: BestHDBSCANFlat
       k_bounds: [2, 8]
       min_cluster_size: 20
+      cluster_selection_method: "leaf"
 
   mean_localmap_bestkmeans:
     imputer:
