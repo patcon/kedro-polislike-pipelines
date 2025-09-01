@@ -90,7 +90,6 @@ def hbscanflat_clusterer_factory(**kwargs):
 
     defaults: dict = dict()
     defaults.update(kwargs)
-    print(kwargs)
     return HDBSCANFlat(**kwargs)
 
 

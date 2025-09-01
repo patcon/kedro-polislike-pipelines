@@ -18,135 +18,73 @@ class BestHDBSCANFlat(BestClusterer):
 
 class HDBSCANFlat(BaseEstimator, ClusterMixin):
     """
-    A scikit-learn compatible estimator for flat HDBSCAN clustering.
+    A scikit-learn compatible estimator wrapper for HDBSCAN_flat.
 
-    This wraps the functional :func:`HDBSCAN_flat` API into a proper
-    estimator so that it can be used in scikit-learn pipelines and
-    parameter search tools.
+    This wrapper allows `HDBSCAN_flat` to be used in sklearn-style pipelines
+    with familiar methods (`fit`, `fit_predict`, `predict`) and parameter
+    management (`get_params`, `set_params`).
 
     Parameters
     ----------
     n_clusters : int, default=None
-        Desired number of clusters. If ``None``, clustering is determined by
-        the standard HDBSCAN procedure with ``cluster_selection_epsilon``.
+        The number of clusters to extract from the HDBSCAN hierarchy.
 
-    cluster_selection_epsilon : float, default=0.0
-        Core-distance below which to stop splitting clusters. This parameter
-        is ignored if ``n_clusters`` is supplied.
+    cluster_selection_method : {"leaf", "eom"}, default="eom"
+        The method used to extract clusters from the condensed tree.
 
-    clusterer : HDBSCAN, default=None
-        If provided, reuse or copy this pre-trained HDBSCAN instance.
-        Can be modified in-place or deep-copied depending on ``inplace``.
+    min_cluster_size : int, default=5
+        The minimum size of clusters; smaller clusters will be considered noise.
 
-    inplace : bool, default=False
-        If ``True`` and ``clusterer`` is supplied, modify the clusterer
-        in-place. Otherwise, a copy will be used.
-
-    **kwargs : dict
-        Additional keyword arguments passed directly to :func:`HDBSCAN_flat`
-        (and thus the underlying :class:`hdbscan.HDBSCAN`).
+    kwargs : dict
+        Additional keyword arguments passed directly to `HDBSCAN_flat`.
 
     Attributes
     ----------
-    clusterer_ : HDBSCAN
-        The trained HDBSCAN instance after applying flat clustering.
-
     labels_ : ndarray of shape (n_samples,)
-        Cluster labels for each point in the training set.
+        Cluster labels for each point in the dataset given to `fit`.
 
-    probabilities_ : ndarray of shape (n_samples,)
-        Soft cluster membership strength for each point in the training set.
-
-    Examples
-    --------
-    >>> from sklearn.datasets import make_blobs
-    >>> X, _ = make_blobs(n_samples=100, centers=3, random_state=42)
-    >>> clusterer = HDBSCANFlat(n_clusters=3, min_cluster_size=5)
-    >>> labels = clusterer.fit_predict(X)
-    >>> set(labels)
-    {0, 1, 2}
+    clusterer_ : HDBSCAN_flat
+        The underlying fitted HDBSCAN_flat object.
     """
 
     def __init__(
         self,
         n_clusters=None,
-        cluster_selection_epsilon=0.0,
-        clusterer=None,
-        inplace=False,
+        cluster_selection_method="eom",
+        min_cluster_size=5,
         **kwargs,
     ):
         self.n_clusters = n_clusters
-        self.cluster_selection_epsilon = cluster_selection_epsilon
-        self.clusterer = clusterer
-        self.inplace = inplace
-        # keep all HDBSCAN init params as attributes so they show up in get_params/set_params
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        self.cluster_selection_method = cluster_selection_method
+        self.min_cluster_size = min_cluster_size
+        self.kwargs = kwargs  # keep all extra params here
 
     def fit(self, X, y=None):
-        """
-        Fit HDBSCAN_flat with flat clustering.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Training data.
-
-        y : Ignored
-            Not used, present for API consistency by convention.
-
-        Returns
-        -------
-        self : HDBSCANFlat
-            Fitted estimator.
-        """
-        # Gather all keyword args except the explicit params
-        kwargs = {
-            k: v
-            for k, v in self.__dict__.items()
-            if k
-            not in ["n_clusters", "cluster_selection_epsilon", "clusterer", "inplace"]
-        }
-
+        """Fit HDBSCAN_flat to data."""
         self.clusterer_ = HDBSCAN_flat(
             X,
             n_clusters=self.n_clusters,
-            cluster_selection_epsilon=self.cluster_selection_epsilon,
-            clusterer=self.clusterer,
-            inplace=self.inplace,
-            **kwargs,
+            cluster_selection_method=self.cluster_selection_method,
+            min_cluster_size=self.min_cluster_size,
+            **self.kwargs,
         )
+        self.labels_ = self.clusterer_.labels_
         return self
 
     def fit_predict(self, X, y=None, **kwargs):
-        """Fit the model to data and return cluster labels."""
-        self.fit(X, **kwargs)
+        """Fit to data and return cluster labels."""
+        self.fit(X, y, **kwargs)
         return self.labels_
 
     def predict(self, X):
         """
-        Predict cluster labels for new data.
+        Predict cluster labels for X.
 
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            New data to predict.
-
-        Returns
-        -------
-        labels : ndarray of shape (n_samples,)
-            Predicted cluster labels.
+        Notes
+        -----
+        HDBSCAN is not naturally inductive; this method uses
+        the approximate prediction available via the fitted clusterer.
         """
         if not hasattr(self, "clusterer_"):
-            raise ValueError(
-                "This HDBSCANFlat instance is not fitted yet. Call 'fit' first."
-            )
+            raise RuntimeError("You must fit the model before calling predict.")
         return self.clusterer_.approximate_predict(X)[0]
-
-    @property
-    def labels_(self):
-        return self.clusterer_.labels_
-
-    @property
-    def probabilities_(self):
-        return self.clusterer_.probabilities_
