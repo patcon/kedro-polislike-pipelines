@@ -3,8 +3,9 @@
 Script to run Kedro pipelines with filtering and visualization options.
 
 Usage:
-    python scripts/run_pipelines.py --all [--launch-viz]
-    python scripts/run_pipelines.py pipeline1,pipeline2 [--launch-viz]
+    uv run python scripts/run_pipelines.py --all [--launch-viz]
+    uv run python scripts/run_pipelines.py pipeline1,pipeline2 [--launch-viz]
+    uv run python scripts/run_pipelines.py pattern [--params "key1=value1,key2=value2"]
 """
 
 import argparse
@@ -145,11 +146,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python scripts/run_pipelines.py --all
-  python scripts/run_pipelines.py --all --launch-viz
-  python scripts/run_pipelines.py polis,mean_pca_bestkmeans
-  python scripts/run_pipelines.py mean_pacmap_kmeans --launch-viz
-  python scripts/run_pipelines.py besthdbscanflat --params "param1:value1,param2:value2"
+  uv run python scripts/run_pipelines.py --all
+  uv run python scripts/run_pipelines.py --all --launch-viz
+  uv run python scripts/run_pipelines.py polis,mean_pca_bestkmeans
+  uv run python scripts/run_pipelines.py mean_pacmap_kmeans --launch-viz
+  uv run python scripts/run_pipelines.py besthdbscanflat --params "param1=value1,param2=value2"
         """,
     )
 
