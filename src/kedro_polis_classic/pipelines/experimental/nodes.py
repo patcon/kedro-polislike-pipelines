@@ -237,19 +237,19 @@ def _create_scatter_plot(
     return fig
 
 
-def create_scaler_scatter_plot(
+def create_scatter_plot(
     scaler_output,  # Can be numpy array or DataFrame
     clusterer_output,  # Cluster labels
     flip_x: bool = False,
     flip_y: bool = False,
 ) -> go.Figure:
     """
-    Create a scatter plot of the scaler output for visualization.
+    Create a scatter plot of the output for visualization.
     Supports 2D and 3D projections.
     Adapted from polis pipeline create_pca_scatter_plots node.
 
     Args:
-        scaler_output: Numpy array or DataFrame with scaled components from the experimental pipeline
+        scaler_output: Numpy array or DataFrame with components from the experimental pipeline
         clusterer_output: Cluster labels for coloring the points
         flip_x: If True, flip the x-axis by multiplying by -1
         flip_y: If True, flip the y-axis by multiplying by -1
@@ -303,7 +303,7 @@ def create_scaler_scatter_plot(
         flip_y=flip_y,
         colorbar_title="Cluster",
         color_values=cluster_labels,
-        title="Experimental Pipeline: Scaled Participant Projections (Colored by Cluster)",
+        title="Experimental Pipeline: Participant Projections (Colored by Cluster)",
         use_categorical_colors=True,
         category_orders=category_orders,
     )

@@ -6,7 +6,7 @@ from .nodes import (
     dedup_votes,
     make_raw_vote_matrix,
     create_labels_dataframe,
-    create_scaler_scatter_plot,
+    create_scatter_plot,
 )
 
 
@@ -74,14 +74,14 @@ def create_pipeline(pipeline_key) -> Pipeline:
     # Add scatter plot visualization node
     nodes.append(
         node(
-            func=create_scaler_scatter_plot,
+            func=create_scatter_plot,
             inputs=[
                 "scaler_output",
                 "clusterer_output",
                 "params:visualization.flip_x",
                 "params:visualization.flip_y",
             ],
-            outputs=f"{pipeline_key}.scaler_scatter_plot",
+            outputs=f"{pipeline_key}.scatter_plot",
             name="create_scatter_plot",
         )
     )
