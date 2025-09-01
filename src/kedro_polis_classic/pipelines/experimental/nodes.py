@@ -286,6 +286,11 @@ def create_scaler_scatter_plot(
 
     # Sort unique cluster labels numerically to ensure proper legend ordering
     unique_labels = sorted(cluster_labels.unique())
+
+    # Always include -1 (noise/outliers) in category order for consistent coloring
+    if -1 not in unique_labels:
+        unique_labels = [-1] + unique_labels
+
     cluster_labels = cluster_labels.astype(str)
 
     # Create category orders for plotly express
