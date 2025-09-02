@@ -97,12 +97,16 @@ def create_pipeline(pipeline_key) -> Pipeline:
     prev_output = "masked_vote_matrix"  # Use masked vote matrix as input to components
 
     for step in step_names:
-        # Skip steps that are not configured for this pipeline
+        # Use NoOpTransformer for missing steps (except clusterer which is always required)
         if step not in pipeline_params:
-            continue
+            if step == "clusterer":
+                continue  # Skip clusterer if not configured
+            else:
+                step_params = {"name": "NoOpTransformer"}
+        else:
+            step_params = pipeline_params.get(step, {})
 
         # Check for input: parameters and build catalog inputs list
-        step_params = pipeline_params.get(step, {})
         required_catalog_inputs = _extract_input_parameters(step_params)
 
         # Build inputs list - start with the basic inputs, then add catalog inputs (empty list if none)
@@ -110,17 +114,23 @@ def create_pipeline(pipeline_key) -> Pipeline:
         inputs.extend(required_catalog_inputs)
 
         # Create generic estimator wrapper for all steps
-        def create_estimator_wrapper(step_name, required_inputs):
+        def create_estimator_wrapper(step_name, required_inputs, params_override=None):
             def estimator_wrapper(*args):
                 X, params = args[0], args[1]
+                # Use override params if provided (for NoOpTransformer case)
+                if params_override is not None:
+                    params = params_override
                 # Map remaining args to catalog input names
                 catalog_kwargs = {name: args[i + 2] for i, name in enumerate(required_inputs) if i + 2 < len(args)}
                 return run_component_node(X, params, step_name, **catalog_kwargs)
             return estimator_wrapper
 
+        # For NoOpTransformer case, we need to pass the params directly since they won't be in the config
+        params_override = step_params if step not in pipeline_params else None
+
         nodes.append(
             node(
-                func=create_estimator_wrapper(step, required_catalog_inputs),
+                func=create_estimator_wrapper(step, required_catalog_inputs, params_override),
                 inputs=inputs,
                 outputs=f"{pipeline_key}__{step}_output",
                 name=f"{step}_node",
@@ -129,13 +139,12 @@ def create_pipeline(pipeline_key) -> Pipeline:
         prev_output = f"{pipeline_key}__{step}_output"
 
     # Add scatter plot visualization node
-    # Use the last available output from the pipeline (could be filter_output, scaler_output, etc.)
-    scatter_input = prev_output  # This will be the last step's output
+    # Always use filter_output since we now guarantee a filter step exists
     nodes.append(
         node(
             func=create_scatter_plot,
             inputs=[
-                scatter_input,
+                f"{pipeline_key}__filter_output",
                 f"{pipeline_key}__clusterer_output",
                 "params:visualization.flip_x",
                 "params:visualization.flip_y",

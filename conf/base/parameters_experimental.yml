@@ -42,10 +42,10 @@ pipelines:
   mean_pca_bestkmeans_alt:
     <<: *polis_classic
     scaler:
-      name: NoOpScaler
+      name: NoOpTransformer
 
     filter:
-      name: NoOpFilter
+      name: NoOpTransformer
 
   mean_pca_hdbscan:
     <<: *polis_classic
@@ -69,7 +69,7 @@ pipelines:
       n_neighbors: null
 
     scaler:
-      name: NoOpScaler
+      name: NoOpTransformer
 
     clusterer:
       name: KMeans
@@ -88,7 +88,7 @@ pipelines:
       random_state: ${globals:random_state}
 
     scaler:
-      name: NoOpScaler
+      name: NoOpTransformer
 
     clusterer:
       name: HDBSCANFlat
@@ -107,7 +107,7 @@ pipelines:
       random_state: ${globals:random_state}
 
     scaler:
-      name: NoOpScaler
+      name: NoOpTransformer
 
     clusterer:
       name: HDBSCANFlat
@@ -126,7 +126,7 @@ pipelines:
       random_state: ${globals:random_state}
 
     scaler:
-      name: NoOpScaler
+      name: NoOpTransformer
 
     clusterer:
       name: BestHDBSCANFlat
@@ -146,7 +146,7 @@ pipelines:
       random_state: ${globals:random_state}
 
     scaler:
-      name: NoOpScaler
+      name: NoOpTransformer
 
     clusterer:
       name: BestKMeans
@@ -166,7 +166,7 @@ pipelines:
       random_state: ${globals:random_state}
 
     scaler:
-      name: NoOpScaler
+      name: NoOpTransformer
 
     clusterer:
       name: BestHDBSCANFlat
@@ -185,7 +185,7 @@ pipelines:
       random_state: ${globals:random_state}
 
     scaler:
-      name: NoOpScaler
+      name: NoOpTransformer
 
     clusterer:
       name: KMeans

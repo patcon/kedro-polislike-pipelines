@@ -49,12 +49,6 @@ def localmap_reducer_factory(**kwargs):
 
 
 # Scalers
-@EstimatorRegistry.register("NoOpScaler")
-def noop_scaler_factory(**kwargs):
-    from sklearn.preprocessing import FunctionTransformer
-
-    return FunctionTransformer(**kwargs)
-
 @EstimatorRegistry.register("SparsityAwareScaler")
 def sparsity_aware_scaler_factory(**kwargs):
     from reddwarf.sklearn.transformers import SparsityAwareScaler
@@ -117,8 +111,8 @@ def sample_mask_filter_factory(**kwargs):
     return SampleMaskFilter(**kwargs)
 
 
-@EstimatorRegistry.register("NoOpFilter")
-def noop_filter_factory(**kwargs):
+@EstimatorRegistry.register("NoOpTransformer")
+def noop_transformer_factory(**kwargs):
     from sklearn.preprocessing import FunctionTransformer
 
     return FunctionTransformer(**kwargs)
