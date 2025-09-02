@@ -1,4 +1,3 @@
-from kedro.config import OmegaConfigLoader
 from kedro.pipeline import Pipeline, node
 from .nodes import (
     run_component_node,
@@ -9,6 +8,7 @@ from .nodes import (
     create_labels_dataframe,
     create_scatter_plot,
 )
+from ..config import load_pipelines_config
 
 
 def _extract_input_parameters(params_dict: dict) -> list[str]:
@@ -34,12 +34,9 @@ def _extract_input_parameters(params_dict: dict) -> list[str]:
     return input_catalog_items
 
 def create_pipeline(pipeline_key) -> Pipeline:
-    # Load pipeline parameters using OmegaConfigLoader
-    config_loader = OmegaConfigLoader(
-        conf_source="conf", base_env="base", default_run_env="local"
-    )
-    params = config_loader["parameters"]
-    pipeline_params = params.get("pipelines", {}).get(pipeline_key, {})
+    # Load pipeline parameters
+    pipelines_config = load_pipelines_config()
+    pipeline_params = pipelines_config.get(pipeline_key, {})
 
     nodes = []
 

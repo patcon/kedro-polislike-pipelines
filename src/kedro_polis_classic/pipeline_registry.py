@@ -1,18 +1,13 @@
 from kedro.pipeline import Pipeline
-from kedro.config import OmegaConfigLoader
 from .pipelines.polis import pipeline as polis_pipeline
 from .pipelines.experimental import pipeline as experiment_pipeline
+from .pipelines.config import load_pipelines_config
 
 
 def register_pipelines() -> dict[str, Pipeline]:
-    # Load configuration to get experimental pipeline names dynamically
-    config_loader = OmegaConfigLoader(
-        conf_source="conf", base_env="base", default_run_env="local"
-    )
-
-    # Load parameters to get pipeline keys from parameters_experimental.yml
-    params = config_loader["parameters"]
-    experimental_pipeline_names = list(params.get("pipelines", {}).keys())
+    # Load pipeline configurations
+    pipelines_config = load_pipelines_config()
+    experimental_pipeline_names = list(pipelines_config.keys())
 
     pipelines = {}
 
