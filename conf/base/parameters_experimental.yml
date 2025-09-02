@@ -31,7 +31,6 @@ pipelines:
     clusterer:
       name: BestHDBSCANFlat
       k_bounds: [2, 5]
-      random_state: ${globals:random_state}
 
   mean_pacmap_kmeans:
     imputer:
@@ -108,7 +107,6 @@ pipelines:
       k_bounds: [2, 8]
       min_cluster_size: 20
       cluster_selection_method: "leaf"
-      random_state: ${globals:random_state}
 
   mean_localmap_bestkmeans:
     imputer:
@@ -147,7 +145,6 @@ pipelines:
     clusterer:
       name: BestHDBSCANFlat
       k_bounds: [2, 10]
-      random_state: ${globals:random_state}
 
   knn5d_pacmap_kmeans: &knn5d_pacmap_kmeans
     imputer:
