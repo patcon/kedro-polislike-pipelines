@@ -1,8 +1,8 @@
-from .registry import ComponentRegistry
+from .registry import EstimatorRegistry
 
 
 # Imputers
-@ComponentRegistry.register("SimpleImputer")
+@EstimatorRegistry.register("SimpleImputer")
 def simple_imputer_factory(**kwargs):
     from sklearn.impute import SimpleImputer
 
@@ -11,7 +11,7 @@ def simple_imputer_factory(**kwargs):
     return SimpleImputer(**kwargs)
 
 
-@ComponentRegistry.register("KNNImputer")
+@EstimatorRegistry.register("KNNImputer")
 def knn_imputer_factory(**kwargs):
     from sklearn.impute import KNNImputer
 
@@ -21,7 +21,7 @@ def knn_imputer_factory(**kwargs):
 
 
 # Reducers
-@ComponentRegistry.register("PCA")
+@EstimatorRegistry.register("PCA")
 def pca_reducer_factory(**kwargs):
     from sklearn.decomposition import PCA
 
@@ -30,7 +30,7 @@ def pca_reducer_factory(**kwargs):
     return PCA(**kwargs)
 
 
-@ComponentRegistry.register("PaCMAP")
+@EstimatorRegistry.register("PaCMAP")
 def pacmap_reducer_factory(**kwargs):
     from pacmap import PaCMAP
 
@@ -39,7 +39,7 @@ def pacmap_reducer_factory(**kwargs):
     return PaCMAP(**defaults)
 
 
-@ComponentRegistry.register("LocalMAP")
+@EstimatorRegistry.register("LocalMAP")
 def localmap_reducer_factory(**kwargs):
     from pacmap import LocalMAP
 
@@ -49,20 +49,20 @@ def localmap_reducer_factory(**kwargs):
 
 
 # Scalers
-@ComponentRegistry.register("NoOpScaler")
+@EstimatorRegistry.register("NoOpScaler")
 def noop_scaler_factory(**kwargs):
     from sklearn.preprocessing import FunctionTransformer
 
     return FunctionTransformer(**kwargs)
 
-@ComponentRegistry.register("SparsityAwareScaler")
-def noop_scaler_factory(**kwargs):
+@EstimatorRegistry.register("SparsityAwareScaler")
+def sparsity_aware_scaler_factory(**kwargs):
     from reddwarf.sklearn.transformers import SparsityAwareScaler
 
     return SparsityAwareScaler(**kwargs)
 
 # Clusterers
-@ComponentRegistry.register("KMeans")
+@EstimatorRegistry.register("KMeans")
 def kmeans_clusterer_factory(**kwargs):
     from sklearn.cluster import KMeans
 
@@ -71,7 +71,7 @@ def kmeans_clusterer_factory(**kwargs):
     return KMeans(**kwargs)
 
 
-@ComponentRegistry.register("BestKMeans")
+@EstimatorRegistry.register("BestKMeans")
 def best_kmeans_clusterer_factory(**kwargs):
     from kedro_polis_classic.sklearn.cluster import BestKMeans
 
@@ -80,7 +80,7 @@ def best_kmeans_clusterer_factory(**kwargs):
     return BestKMeans(**kwargs)
 
 
-@ComponentRegistry.register("HDBSCAN")
+@EstimatorRegistry.register("HDBSCAN")
 def hbscan_clusterer_factory(**kwargs):
     from hdbscan import HDBSCAN
 
@@ -89,7 +89,7 @@ def hbscan_clusterer_factory(**kwargs):
     return HDBSCAN(**kwargs)
 
 
-@ComponentRegistry.register("HDBSCANFlat")
+@EstimatorRegistry.register("HDBSCANFlat")
 def hbscanflat_clusterer_factory(**kwargs):
     from ..sklearn.cluster import HDBSCANFlat
 
@@ -98,7 +98,7 @@ def hbscanflat_clusterer_factory(**kwargs):
     return HDBSCANFlat(**kwargs)
 
 
-@ComponentRegistry.register("BestHDBSCANFlat")
+@EstimatorRegistry.register("BestHDBSCANFlat")
 def besthbscanflat_clusterer_factory(**kwargs):
     from ..sklearn.cluster import BestHDBSCANFlat
 

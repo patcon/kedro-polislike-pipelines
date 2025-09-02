@@ -1,4 +1,4 @@
-class ComponentRegistry:
+class EstimatorRegistry:
     _registry = {}
 
     @classmethod
@@ -14,6 +14,6 @@ class ComponentRegistry:
     @classmethod
     def get(cls, name, **kwargs):
         if name not in cls._registry:
-            raise ValueError(f"Component {name} not registered")
+            raise ValueError(f"Estimator {name} not registered")
         # Call the factory function now, passing kwargs
         return cls._registry[name](**kwargs)
