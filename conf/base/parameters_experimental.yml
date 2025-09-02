@@ -31,7 +31,8 @@ pipelines:
       X_sparse: "input:masked_vote_matrix"
 
     filter:
-      name: NoOpFilter
+      name: SampleMaskFilter
+      mask: "input:participant_mask"
 
     clusterer:
       name: BestKMeans

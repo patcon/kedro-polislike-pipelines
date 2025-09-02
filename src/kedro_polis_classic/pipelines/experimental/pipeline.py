@@ -128,22 +128,12 @@ def create_pipeline(pipeline_key) -> Pipeline:
         )
         prev_output = f"{step}_output"
 
-    # Add labels processing node
-    nodes.append(
-        node(
-            func=create_labels_dataframe,
-            inputs=["clusterer_output", "masked_vote_matrix"],
-            outputs="labels_dataframe",
-            name="create_labels_dataframe",
-        )
-    )
-
     # Add scatter plot visualization node
     nodes.append(
         node(
             func=create_scatter_plot,
             inputs=[
-                "scaler_output",
+                "filter_output",
                 "clusterer_output",
                 "params:visualization.flip_x",
                 "params:visualization.flip_y",

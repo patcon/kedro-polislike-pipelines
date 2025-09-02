@@ -56,6 +56,16 @@ participant_filter_mask:
     kedro-viz:
       layer: primary
 
+# TODO: Allow this to be commented out without breaking pipeline.
+participant_mask:
+  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
+  filepath: data/02_intermediate/participant_mask.csv
+  metadata:
+    index_in_preview: true
+    save_load_index: true
+    kedro-viz:
+      layer: primary
+
 statement_filter_mask:
   type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
   filepath: data/02_intermediate/statement_filter_mask.csv

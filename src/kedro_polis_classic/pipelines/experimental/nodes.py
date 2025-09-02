@@ -352,7 +352,7 @@ def _create_scatter_plot(
 
 
 def create_scatter_plot(
-    scaler_output,  # Can be numpy array or DataFrame
+    filter_output,  # Can be numpy array or DataFrame - filtered data from SampleMaskFilter
     clusterer_output,  # Cluster labels
     flip_x: bool = False,
     flip_y: bool = False,
@@ -363,7 +363,7 @@ def create_scatter_plot(
     Adapted from polis pipeline create_pca_scatter_plots node.
 
     Args:
-        scaler_output: Numpy array or DataFrame with components from the experimental pipeline
+        filter_output: Numpy array or DataFrame with filtered components from the experimental pipeline
         clusterer_output: Cluster labels for coloring the points
         flip_x: If True, flip the x-axis by multiplying by -1
         flip_y: If True, flip the y-axis by multiplying by -1
@@ -374,9 +374,9 @@ def create_scatter_plot(
     import numpy as np
 
     # Convert numpy array to DataFrame if needed
-    if isinstance(scaler_output, np.ndarray):
+    if isinstance(filter_output, np.ndarray):
         # Create generic column names based on dimensions
-        n_components = scaler_output.shape[1] if len(scaler_output.shape) > 1 else 1
+        n_components = filter_output.shape[1] if len(filter_output.shape) > 1 else 1
         if n_components <= 3:
             column_names = ["x", "y", "z"][:n_components]
         else:
@@ -384,13 +384,13 @@ def create_scatter_plot(
 
         # Create DataFrame with generic participant IDs
         data = pd.DataFrame(
-            scaler_output,
-            index=range(len(scaler_output)),
+            filter_output,
+            index=range(len(filter_output)),
             columns=pd.Index(column_names),
         )
     else:
         # Already a DataFrame
-        data = scaler_output
+        data = filter_output
 
     # Convert cluster labels to pandas Series of strings for categorical coloring
     if isinstance(clusterer_output, np.ndarray):
