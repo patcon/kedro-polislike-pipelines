@@ -97,14 +97,8 @@ def create_pipeline(pipeline_key) -> Pipeline:
     prev_output = "masked_vote_matrix"  # Use masked vote matrix as input to components
 
     for step in step_names:
-        # Use NoOpTransformer for missing steps (except clusterer which is always required)
-        if step not in pipeline_params:
-            if step == "clusterer":
-                continue  # Skip clusterer if not configured
-            else:
-                step_params = {"name": "NoOpTransformer"}
-        else:
-            step_params = pipeline_params.get(step, {})
+        # All steps are now explicitly defined in the YAML config
+        step_params = pipeline_params[step]
 
         # Check for input: parameters and build catalog inputs list
         required_catalog_inputs = _extract_input_parameters(step_params)
@@ -114,23 +108,17 @@ def create_pipeline(pipeline_key) -> Pipeline:
         inputs.extend(required_catalog_inputs)
 
         # Create generic estimator wrapper for all steps
-        def create_estimator_wrapper(step_name, required_inputs, params_override=None):
+        def create_estimator_wrapper(step_name, required_inputs):
             def estimator_wrapper(*args):
                 X, params = args[0], args[1]
-                # Use override params if provided (for NoOpTransformer case)
-                if params_override is not None:
-                    params = params_override
                 # Map remaining args to catalog input names
                 catalog_kwargs = {name: args[i + 2] for i, name in enumerate(required_inputs) if i + 2 < len(args)}
                 return run_component_node(X, params, step_name, **catalog_kwargs)
             return estimator_wrapper
 
-        # For NoOpTransformer case, we need to pass the params directly since they won't be in the config
-        params_override = step_params if step not in pipeline_params else None
-
         nodes.append(
             node(
-                func=create_estimator_wrapper(step, required_catalog_inputs, params_override),
+                func=create_estimator_wrapper(step, required_catalog_inputs),
                 inputs=inputs,
                 outputs=f"{pipeline_key}__{step}_output",
                 name=f"{step}_node",

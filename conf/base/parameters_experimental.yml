@@ -71,6 +71,9 @@ pipelines:
     scaler:
       name: NoOpTransformer
 
+    filter:
+      name: NoOpTransformer
+
     clusterer:
       name: KMeans
       n_clusters: 5
@@ -88,6 +91,9 @@ pipelines:
       random_state: ${globals:random_state}
 
     scaler:
+      name: NoOpTransformer
+
+    filter:
       name: NoOpTransformer
 
     clusterer:
@@ -109,6 +115,9 @@ pipelines:
     scaler:
       name: NoOpTransformer
 
+    filter:
+      name: NoOpTransformer
+
     clusterer:
       name: HDBSCANFlat
       n_clusters: 8
@@ -126,6 +135,9 @@ pipelines:
       random_state: ${globals:random_state}
 
     scaler:
+      name: NoOpTransformer
+
+    filter:
       name: NoOpTransformer
 
     clusterer:
@@ -148,6 +160,9 @@ pipelines:
     scaler:
       name: NoOpTransformer
 
+    filter:
+      name: NoOpTransformer
+
     clusterer:
       name: BestKMeans
       k_bounds: [2, 10]
@@ -168,6 +183,9 @@ pipelines:
     scaler:
       name: NoOpTransformer
 
+    filter:
+      name: NoOpTransformer
+
     clusterer:
       name: BestHDBSCANFlat
       k_bounds: [2, 10]
@@ -185,6 +203,9 @@ pipelines:
       random_state: ${globals:random_state}
 
     scaler:
+      name: NoOpTransformer
+
+    filter:
       name: NoOpTransformer
 
     clusterer:
