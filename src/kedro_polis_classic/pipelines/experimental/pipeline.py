@@ -10,6 +10,7 @@ from .nodes import (
     make_masked_vote_matrix,
     create_labels_dataframe,
     create_scatter_plot,
+    save_scatter_plot_image,
 )
 from ..config import load_pipelines_config
 
@@ -139,6 +140,21 @@ def create_pipeline(pipeline_key) -> Pipeline:
             ],
             outputs=f"{pipeline_key}__scatter_plot",
             name="create_scatter_plot",
+        )
+    )
+
+    # Add scatter plot image saving node
+    def create_image_saver_wrapper(pipeline_name):
+        def image_saver_wrapper(scatter_plot):
+            return save_scatter_plot_image(scatter_plot, pipeline_name)
+        return image_saver_wrapper
+
+    nodes.append(
+        node(
+            func=create_image_saver_wrapper(pipeline_key),
+            inputs=f"{pipeline_key}__scatter_plot",
+            outputs=f"{pipeline_key}__scatter_plot_image_path",
+            name="save_scatter_plot_image",
         )
     )
 

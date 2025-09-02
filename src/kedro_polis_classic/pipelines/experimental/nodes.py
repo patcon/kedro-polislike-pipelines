@@ -423,3 +423,40 @@ def create_scatter_plot(
     )
 
     return scatter_plot
+
+
+def save_scatter_plot_image(
+    scatter_plot: go.Figure,
+    pipeline_name: str,
+) -> str:
+    """
+    Save scatter plot as an image file with ISO timestamp prefix.
+    
+    Args:
+        scatter_plot: Plotly figure to save
+        pipeline_name: Name of the pipeline for the filename
+        
+    Returns:
+        The filepath where the image was saved
+    """
+    from datetime import datetime
+    import os
+    
+    # Create ISO timestamp prefix (YYYY-MM-DD-HH-MM format)
+    timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M")
+    
+    # Create filename with timestamp prefix
+    filename = f"{timestamp}_{pipeline_name}_scatter_plot.png"
+    
+    # Create the directory path
+    output_dir = f"data/{pipeline_name}/08_reporting"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Full filepath
+    filepath = os.path.join(output_dir, filename)
+    
+    # Save the plot as PNG image
+    scatter_plot.write_image(filepath, width=800, height=600, scale=2)
+    
+    print(f"Scatter plot image saved to: {filepath}")
+    return filepath
