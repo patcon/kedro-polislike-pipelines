@@ -30,6 +30,13 @@ def pca_reducer_factory(**kwargs):
     return PCA(**kwargs)
 
 
+@EstimatorRegistry.register("UMAP")
+def umap_reducer_factory(**kwargs):
+    from umap import UMAP
+
+    return UMAP(**kwargs)
+
+
 @EstimatorRegistry.register("PaCMAP")
 def pacmap_reducer_factory(**kwargs):
     from pacmap import PaCMAP

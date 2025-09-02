@@ -232,3 +232,23 @@ pipelines:
       name: PCA
       n_components: 2
       random_state: ${globals:random_state}
+
+  mean_umap_bestkmeans:
+    <<: *knn5d_pacmap_bestkmeans
+    imputer:
+      name: SimpleImputer
+      strategy: mean
+
+    reducer:
+      name: UMAP
+      n_components: 2
+      n_neighbors: 15
+      random_state: ${globals:random_state}
+
+  knn5d_umap_bestkmeans:
+    <<: *knn5d_pacmap_bestkmeans
+    reducer:
+      name: UMAP
+      n_components: 2
+      n_neighbors: 15
+      random_state: ${globals:random_state}
