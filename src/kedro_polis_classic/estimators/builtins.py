@@ -105,3 +105,13 @@ def besthbscanflat_clusterer_factory(**kwargs):
     defaults: dict = dict()
     defaults.update(kwargs)
     return BestHDBSCANFlat(**kwargs)
+
+
+# Sample Filters
+@EstimatorRegistry.register("SampleMaskFilter")
+def sample_mask_filter_factory(**kwargs):
+    from ..sklearn.sample_filter import SampleMaskFilter
+
+    defaults: dict = dict()
+    defaults.update(kwargs)
+    return SampleMaskFilter(**kwargs)
