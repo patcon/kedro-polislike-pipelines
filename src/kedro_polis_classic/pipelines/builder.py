@@ -7,7 +7,7 @@ from ..estimators import builtins
 
 def build_pipeline_from_params(params: dict) -> Pipeline:
     steps = []
-    for step_name in ["imputer", "reducer", "scaler", "clusterer"]:
+    for step_name in ["imputer", "reducer", "scaler", "filter", "clusterer"]:
         if step_name in params:
             step_config = params[step_name]
             name = step_config.pop("name")

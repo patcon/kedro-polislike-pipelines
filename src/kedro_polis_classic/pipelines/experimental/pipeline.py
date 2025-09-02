@@ -93,10 +93,14 @@ def create_pipeline(pipeline_key) -> Pipeline:
     )
 
     # Component processing nodes
-    step_names = ["imputer", "reducer", "scaler", "clusterer"]
+    step_names = ["imputer", "reducer", "scaler", "filter", "clusterer"]
     prev_output = "masked_vote_matrix"  # Use masked vote matrix as input to components
 
     for step in step_names:
+        # Skip steps that are not configured for this pipeline
+        if step not in pipeline_params:
+            continue
+
         # Check for input: parameters and build catalog inputs list
         step_params = pipeline_params.get(step, {})
         required_catalog_inputs = _extract_input_parameters(step_params)

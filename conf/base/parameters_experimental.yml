@@ -30,6 +30,9 @@ pipelines:
       # TODO: This seems to look a bit more like Polis when raw_vote_matrix.
       X_sparse: "input:masked_vote_matrix"
 
+    filter:
+      name: NoOpFilter
+
     clusterer:
       name: BestKMeans
       k_bounds: [2, 5]
@@ -39,6 +42,9 @@ pipelines:
     <<: *polis_classic
     scaler:
       name: NoOpScaler
+
+    filter:
+      name: NoOpFilter
 
   mean_pca_hdbscan:
     <<: *polis_classic
