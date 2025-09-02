@@ -129,11 +129,13 @@ def create_pipeline(pipeline_key) -> Pipeline:
         prev_output = f"{pipeline_key}__{step}_output"
 
     # Add scatter plot visualization node
+    # Use the last available output from the pipeline (could be filter_output, scaler_output, etc.)
+    scatter_input = prev_output  # This will be the last step's output
     nodes.append(
         node(
             func=create_scatter_plot,
             inputs=[
-                "filter_output",
+                scatter_input,
                 f"{pipeline_key}__clusterer_output",
                 "params:visualization.flip_x",
                 "params:visualization.flip_y",
