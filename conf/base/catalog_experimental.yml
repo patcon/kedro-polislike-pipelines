@@ -1,0 +1,58 @@
+# Experimental pipeline catalog entries
+# Each pipeline gets its own directory structure using {pipeline_name} templating
+
+# Intermediate outputs from each step of the experimental pipeline
+# These are kept as MemoryDatasets since they're numpy arrays, not DataFrames
+"{pipeline_name}__imputer_output":
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+"{pipeline_name}__reducer_output":
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+"{pipeline_name}__scaler_output":
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+"{pipeline_name}__filter_output":
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+"{pipeline_name}__clusterer_output":
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: model_output
+
+# Final outputs
+"{pipeline_name}__labels_dataframe":
+  type: pandas.CSVDataset
+  filepath: data/{pipeline_name}/03_primary/labels.csv
+  save_args:
+    index: false
+  metadata:
+    kedro-viz:
+      layer: primary
+
+"{pipeline_name}__scatter_plot":
+  type: plotly.JSONDataset
+  filepath: data/{pipeline_name}/08_reporting/scatter_plot.json
+  metadata:
+    kedro-viz:
+      layer: reporting
+
+# Legacy outputs for backward compatibility (can be removed if not needed)
+scaler_output:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature

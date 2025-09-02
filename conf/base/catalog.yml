@@ -153,17 +153,4 @@ labels_dataframe:
       layer: primary
       preview_args:
         nrows: 10
-
-# Experimental pipeline outputs
-scaler_output:
-  type: MemoryDataset
-  metadata:
-    kedro-viz:
-      layer: feature
-
-"{pipeline_name}__scatter_plot":
-  type: plotly.JSONDataset
-  filepath: data/{pipeline_name}/08_reporting/scatter_plot.json
-  metadata:
-    kedro-viz:
-      layer: reporting
+# Note: Experimental pipeline catalog entries have been moved to catalog_experimental.yml

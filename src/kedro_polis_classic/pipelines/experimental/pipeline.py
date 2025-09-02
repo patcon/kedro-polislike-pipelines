@@ -122,11 +122,11 @@ def create_pipeline(pipeline_key) -> Pipeline:
             node(
                 func=create_estimator_wrapper(step, required_catalog_inputs),
                 inputs=inputs,
-                outputs=f"{step}_output",
+                outputs=f"{pipeline_key}__{step}_output",
                 name=f"{step}_node",
             )
         )
-        prev_output = f"{step}_output"
+        prev_output = f"{pipeline_key}__{step}_output"
 
     # Add scatter plot visualization node
     nodes.append(
@@ -134,7 +134,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
             func=create_scatter_plot,
             inputs=[
                 "filter_output",
-                "clusterer_output",
+                f"{pipeline_key}__clusterer_output",
                 "params:visualization.flip_x",
                 "params:visualization.flip_y",
             ],
