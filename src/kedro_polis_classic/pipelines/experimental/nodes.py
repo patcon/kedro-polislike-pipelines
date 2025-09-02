@@ -140,14 +140,23 @@ def make_participant_mask(matrix: pd.DataFrame, min_votes: int = 7) -> pd.Series
     return mask
 
 
-def make_statement_mask(comments: pd.DataFrame, strict_moderation: bool = True) -> pd.Series:
+def make_statement_mask(comments: pd.DataFrame, strict_moderation: bool = False, mask_out_is_meta: bool = True) -> pd.Series:
     """Return a mask for unmoderated statements.
 
     If `strict_moderation=True`, only keep comments explicitly moderated in (`moderated=1`).
-    If `strict_moderation=False`, allow unmoderated (`moderated=0`).
+    If `strict_moderation=False`, extend statements to include unmoderated (`moderated=0`).
+
+    By default, upstream Polis has this behavior:
+    - acts like strict moderation is disabled all the time for filtering the vote matrix,
+      so only explicitly moderated statements are ever masked out (This is perhaps an oversight.)
+    - `is_meta` statements are masked out.
     """
-    threshold = 1 if strict_moderation else 0
-    mask = comments["moderated"] >= threshold
+    in_threshold = 1 if strict_moderation else 0
+
+    if mask_out_is_meta:
+        mask = (comments["moderated"] >= in_threshold) & (comments["is-meta"] == False)
+    else:
+        mask = comments["moderated"] >= in_threshold
 
     mask.name = "statement-in"
     return mask

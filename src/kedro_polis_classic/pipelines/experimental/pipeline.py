@@ -79,7 +79,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
             ),
             node(
                 func=make_statement_mask,
-                inputs=["raw_comments", "params:strict_moderation"],
+                inputs=["raw_comments"],
                 outputs="statement_mask",
                 name="make_statement_mask",
             ),

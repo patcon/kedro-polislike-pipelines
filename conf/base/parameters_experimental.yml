@@ -1,5 +1,4 @@
 # Preprocessing parameters (from polis pipeline)
-strict_moderation: false
 min_votes_threshold: 7
 
 visualization:
