@@ -11,7 +11,20 @@ from .nodes import (
 
 
 def _extract_input_parameters(params_dict: dict) -> list[str]:
-    """Extract catalog item names from parameters that start with 'input:'."""
+    """
+    Extract catalog item names from parameters that start with 'input:'.
+
+    Args:
+        params_dict: Dictionary of parameters that may contain 'input:' values
+
+    Returns:
+        List of catalog item names referenced by 'input:' parameters.
+        Returns an empty list if no 'input:' parameters are found.
+
+    Example:
+        If params_dict = {"name": "SparsityAwareScaler", "X_sparse": "input:raw_vote_matrix"}
+        Returns ["raw_vote_matrix"]
+    """
     input_catalog_items = []
     for key, value in params_dict.items():
         if key != "name" and isinstance(value, str) and value.startswith("input:"):
@@ -77,25 +90,26 @@ def create_pipeline(pipeline_key) -> Pipeline:
     pipeline_params = _load_pipeline_params(pipeline_key)
 
     for step in step_names:
-        # Get step parameters to check for input: references
+        # Check for input: parameters and build catalog inputs list
         step_params = pipeline_params.get(step, {})
         required_catalog_inputs = _extract_input_parameters(step_params)
 
-        # Build inputs list - start with the basic inputs, then add catalog inputs
+        # Build inputs list - start with the basic inputs, then add catalog inputs (empty list if none)
         inputs = [prev_output, f"params:pipelines.{pipeline_key}.{step}"]
         inputs.extend(required_catalog_inputs)
 
-        # Simple wrapper that passes catalog inputs as kwargs
-        def create_step_wrapper(step_name, required_inputs):
-            def step_wrapper(*args):
+        # Create generic estimator wrapper for all steps
+        def create_estimator_wrapper(step_name, required_inputs):
+            def estimator_wrapper(*args):
                 X, params = args[0], args[1]
+                # Map remaining args to catalog input names
                 catalog_kwargs = {name: args[i + 2] for i, name in enumerate(required_inputs) if i + 2 < len(args)}
                 return run_component_node(X, params, step_name, **catalog_kwargs)
-            return step_wrapper
+            return estimator_wrapper
 
         nodes.append(
             node(
-                func=create_step_wrapper(step, required_catalog_inputs),
+                func=create_estimator_wrapper(step, required_catalog_inputs),
                 inputs=inputs,
                 outputs=f"{step}_output",
                 name=f"{step}_node",
