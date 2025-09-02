@@ -1,3 +1,4 @@
+from kedro.config import OmegaConfigLoader
 from kedro.pipeline import Pipeline, node
 from .nodes import (
     run_component_node,
@@ -32,24 +33,7 @@ def _extract_input_parameters(params_dict: dict) -> list[str]:
             input_catalog_items.append(catalog_item_name)
     return input_catalog_items
 
-
-def _load_pipeline_params(pipeline_key: str) -> dict:
-    """Load pipeline parameters from the configuration file."""
-    import yaml
-    from pathlib import Path
-
-    try:
-        config_path = Path("conf/base/parameters_experimental.yml")
-        if not config_path.exists():
-            return {}
-        with open(config_path, 'r') as f:
-            params = yaml.safe_load(f)
-        return params.get("pipelines", {}).get(pipeline_key, {})
-    except Exception:
-        return {}
-
-
-def create_pipeline(pipeline_key) -> Pipeline:
+def create_pipeline(pipeline_key, pipeline_params = {}) -> Pipeline:
     nodes = []
 
     # Data loading nodes
@@ -85,9 +69,6 @@ def create_pipeline(pipeline_key) -> Pipeline:
     # Component processing nodes
     step_names = ["imputer", "reducer", "scaler", "clusterer"]
     prev_output = "raw_vote_matrix"  # Use vote matrix as input to components
-
-    # Load pipeline parameters to determine required catalog inputs
-    pipeline_params = _load_pipeline_params(pipeline_key)
 
     for step in step_names:
         # Check for input: parameters and build catalog inputs list
