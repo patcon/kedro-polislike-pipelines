@@ -33,7 +33,14 @@ def _extract_input_parameters(params_dict: dict) -> list[str]:
             input_catalog_items.append(catalog_item_name)
     return input_catalog_items
 
-def create_pipeline(pipeline_key, pipeline_params = {}) -> Pipeline:
+def create_pipeline(pipeline_key) -> Pipeline:
+    # Load pipeline parameters using OmegaConfigLoader
+    config_loader = OmegaConfigLoader(
+        conf_source="conf", base_env="base", default_run_env="local"
+    )
+    params = config_loader["parameters"]
+    pipeline_params = params.get("pipelines", {}).get(pipeline_key, {})
+
     nodes = []
 
     # Data loading nodes
