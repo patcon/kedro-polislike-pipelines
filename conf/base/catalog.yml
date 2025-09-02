@@ -1,5 +1,3 @@
-strict_moderation: false
-
 # raw_data:
 #   type: kedro_polis_classic.datasets.polis_api.PolisAPIDataset
 #   report_id: null
