@@ -3,11 +3,6 @@ visualization:
   flip_y: false
 
 pipelines:
-  # Default values that get merged into other pipeline configurations.
-  _defaults:
-    reducer:
-      random_state: 42
-
   # The original polis pipeline.
   mean_pca_bestkmeans: &polis_classic
     imputer:
@@ -24,6 +19,7 @@ pipelines:
     clusterer:
       name: BestKMeans
       k_bounds: [2, 5]
+      random_state: ${globals:random_state}
 
   mean_pca_hdbscan:
     <<: *polis_classic
@@ -35,6 +31,7 @@ pipelines:
     clusterer:
       name: BestHDBSCANFlat
       k_bounds: [2, 5]
+      random_state: ${globals:random_state}
 
   mean_pacmap_kmeans:
     imputer:
@@ -52,6 +49,7 @@ pipelines:
     clusterer:
       name: KMeans
       n_clusters: 5
+      random_state: ${globals:random_state}
 
   mean_pacmap_hdbscanflat:
     imputer:
@@ -62,6 +60,7 @@ pipelines:
       name: PaCMAP
       n_components: 2
       n_neighbors: null
+      random_state: ${globals:random_state}
 
     scaler:
       name: NoOpScaler
@@ -80,6 +79,7 @@ pipelines:
       name: LocalMAP
       n_components: 2
       n_neighbors: null
+      random_state: ${globals:random_state}
 
     scaler:
       name: NoOpScaler
@@ -98,6 +98,7 @@ pipelines:
       name: LocalMAP
       n_components: 2
       n_neighbors: null
+      random_state: ${globals:random_state}
 
     scaler:
       name: NoOpScaler
@@ -107,6 +108,7 @@ pipelines:
       k_bounds: [2, 8]
       min_cluster_size: 20
       cluster_selection_method: "leaf"
+      random_state: ${globals:random_state}
 
   mean_localmap_bestkmeans:
     imputer:
@@ -117,6 +119,7 @@ pipelines:
       name: LocalMAP
       n_components: 2
       n_neighbors: null
+      random_state: ${globals:random_state}
 
     scaler:
       name: NoOpScaler
@@ -124,6 +127,7 @@ pipelines:
     clusterer:
       name: BestKMeans
       k_bounds: [2, 10]
+      random_state: ${globals:random_state}
 
   knn5d_pacmap_besthdbscanflat:
     imputer:
@@ -135,6 +139,7 @@ pipelines:
       name: PaCMAP
       n_components: 2
       n_neighbors: null
+      random_state: ${globals:random_state}
 
     scaler:
       name: NoOpScaler
@@ -142,8 +147,9 @@ pipelines:
     clusterer:
       name: BestHDBSCANFlat
       k_bounds: [2, 10]
+      random_state: ${globals:random_state}
 
-  knn5d_pacmap_kmeans: &knn_pacmap_kmeans
+  knn5d_pacmap_kmeans: &knn5d_pacmap_kmeans
     imputer:
       name: KNNImputer
       n_neighbors: 5
@@ -153,6 +159,7 @@ pipelines:
       name: PaCMAP
       n_components: 2
       n_neighbors: null
+      random_state: ${globals:random_state}
 
     scaler:
       name: NoOpScaler
@@ -160,9 +167,11 @@ pipelines:
     clusterer:
       name: KMeans
       n_clusters: 5
+      random_state: ${globals:random_state}
 
   knn5d_localmap_kmeans:
-    <<: *knn_pacmap_kmeans
+    <<: *knn5d_pacmap_kmeans
     reducer:
       <<: *pacmap_reducer
       name: LocalMAP
+      random_state: ${globals:random_state}
