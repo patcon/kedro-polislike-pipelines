@@ -13,6 +13,7 @@ dependencies = [
     "red-dwarf",
     "scikit-learn>=1.6.1",
     "hdbscan>=0.8.40",
+    "kaleido>=1.0.0",
 ]
 
 [build-system]
