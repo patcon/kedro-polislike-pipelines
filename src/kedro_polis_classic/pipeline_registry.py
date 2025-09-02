@@ -13,15 +13,17 @@ def register_pipelines() -> dict[str, Pipeline]:
     # Load parameters to get pipeline keys from parameters_experimental.yml
     params = config_loader["parameters"]
     experimental_pipeline_names = list(params.get("pipelines", {}).keys())
-    # Create base pipelines
-    pipelines = {
-        "polis": polis_pipeline.create_pipeline(),
-        "polis_classic": experiment_pipeline.create_pipeline("mean_pca_bestkmeans"),
-        "__default__": polis_pipeline.create_pipeline(),
-    }
+
+    pipelines = {}
+
+    # Add shorthand name for original polis pipeline.
+    pipelines["polis_classic"] = experiment_pipeline.create_pipeline("mean_pca_bestkmeans")
 
     # Add experimental pipelines using iteration
     for name in experimental_pipeline_names:
         pipelines[name] = experiment_pipeline.create_pipeline(name)
+
+    # Add legacy pipelines to end of list.
+    pipelines["polis_legacy"] = polis_pipeline.create_pipeline()
 
     return pipelines

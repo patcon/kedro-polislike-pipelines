@@ -3,7 +3,8 @@ visualization:
   flip_y: false
 
 pipelines:
-  mean_pca_bestkmeans:
+  # The original polis pipeline.
+  mean_pca_bestkmeans: &polis_classic
     imputer:
       name: SimpleImputer
       strategy: mean
@@ -17,6 +18,17 @@ pipelines:
 
     clusterer:
       name: BestKMeans
+      k_bounds: [2, 5]
+
+  mean_pca_hdbscan:
+    <<: *polis_classic
+    clusterer:
+      name: HDBSCAN
+
+  mean_pca_besthdbscanflat:
+    <<: *polis_classic
+    clusterer:
+      name: BestHDBSCANFlat
       k_bounds: [2, 5]
 
   mean_pacmap_kmeans:
