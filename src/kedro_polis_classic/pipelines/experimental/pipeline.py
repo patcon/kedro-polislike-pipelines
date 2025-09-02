@@ -51,10 +51,10 @@ def create_pipeline(pipeline_key) -> Pipeline:
         # use lambda with default argument to fix step_name
         nodes.append(
             node(
-                func=lambda X, params, defaults, step_name=step: run_component_node(
-                    X, params, step_name, defaults
+                func=lambda X, params, step_name=step: run_component_node(
+                    X, params, step_name
                 ),
-                inputs=[prev_output, f"params:pipelines.{pipeline_key}.{step}", "params:pipelines._defaults"],
+                inputs=[prev_output, f"params:pipelines.{pipeline_key}.{step}"],
                 outputs=f"{step}_output",
                 name=f"{step}_node",
             )

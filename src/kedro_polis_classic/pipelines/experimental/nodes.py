@@ -5,25 +5,15 @@ import plotly.express as px
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
 
 
-def run_component_node(X, params, step_name, defaults=None):
+def run_component_node(X, params, step_name):
     """
     Runs a single pipeline component.
     X: input features
     params: full nested pipeline parameters dict
     step_name: which step to build (imputer/reducer/scaler/clusterer)
-    defaults: optional defaults dict to merge with step config
     """
     # copy to avoid mutating params
-    step_config = params.copy()
-
-    # Merge defaults if provided
-    if defaults and step_name in defaults:
-        default_config = defaults[step_name].copy()
-        # Only add defaults that aren't already specified in step_config
-        for key, value in default_config.items():
-            if key not in step_config:
-                step_config[key] = value
-
+    step_config = params
     pipeline = build_pipeline_from_params({step_name: step_config})
 
     # For clusterer, use fit_predict to get labels instead of fit_transform
