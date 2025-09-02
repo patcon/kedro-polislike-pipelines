@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
+from ..polis.utils import ensure_series
 
 
 def run_component_node(X, params, step_name, **catalog_inputs):
@@ -91,6 +92,77 @@ def make_raw_vote_matrix(deduped_votes: pd.DataFrame) -> pd.DataFrame:
     matrix = matrix.astype("Int64")
 
     return matrix
+
+
+# Preprocessing nodes from polis pipeline
+
+@ensure_series('statement_mask')
+def _apply_statement_filter(matrix: pd.DataFrame, statement_mask: pd.Series, filter_type: str = "fill_zero") -> pd.DataFrame:
+    """Filter out moderated statements from the vote matrix
+
+    Args:
+        matrix: Vote matrix with statements as columns
+        statement_mask: Boolean mask indicating which statements to keep
+        filter_type: Strategy for handling filtered statements:
+            - "fill_zero": Keep all columns but fill filtered statements with 0 (default)
+            - "drop": Remove columns for filtered statements
+    """
+    # Convert statement IDs to strings as more universal type
+    statement_mask = statement_mask.copy()
+    statement_mask.index = statement_mask.index.astype(str)
+
+    if filter_type == "drop":
+        # Filter to only statements that are True in the mask
+        unfiltered_statement_ids = statement_mask.loc[statement_mask].index
+        return matrix.loc[:, unfiltered_statement_ids]
+
+    elif filter_type == "fill_zero":
+        # Create a copy to avoid modifying the original
+        result = matrix.copy()
+        # Get statement IDs that should be filtered out (False in mask)
+        filtered_statement_ids = statement_mask.loc[~statement_mask].index
+        # Fill filtered columns with 0, only for columns that exist in the matrix
+        existing_filtered_cols = [col for col in filtered_statement_ids if col in result.columns]
+        if existing_filtered_cols:
+            result.loc[:, existing_filtered_cols] = 0
+        return result
+
+    else:
+        raise ValueError(f"Invalid filter_type '{filter_type}'. Must be 'drop' or 'fill_zero'.")
+
+
+def make_participant_mask(matrix: pd.DataFrame, min_votes: int = 7) -> pd.Series:
+    """Create a mask for participants who meet the minimum vote threshold"""
+    mask = matrix.count(axis="columns") >= min_votes
+    
+    mask.index.name = "voter-id"
+    mask.name = "participant-in"
+    return mask
+
+
+def make_statement_mask(comments: pd.DataFrame, strict_moderation: bool = True) -> pd.Series:
+    """Return a mask for unmoderated statements.
+
+    If `strict_moderation=True`, only keep comments explicitly moderated in (`moderated=1`).
+    If `strict_moderation=False`, allow unmoderated (`moderated=0`).
+    """
+    threshold = 1 if strict_moderation else 0
+    mask = comments["moderated"] >= threshold
+
+    mask.name = "statement-in"
+    return mask
+
+
+def make_masked_vote_matrix(
+    raw_vote_matrix: pd.DataFrame,
+    statement_mask: pd.Series,
+) -> pd.DataFrame:
+    """Apply statement filter to create the masked vote matrix using fill_zero strategy"""
+    return _apply_statement_filter(
+        matrix=raw_vote_matrix,
+        statement_mask=statement_mask,
+        filter_type="fill_zero",
+    )
 
 
 def create_labels_dataframe(

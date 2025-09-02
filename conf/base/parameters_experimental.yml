@@ -1,3 +1,7 @@
+# Preprocessing parameters (from polis pipeline)
+strict_moderation: false
+min_votes_threshold: 7
+
 visualization:
   flip_x: false
   flip_y: false
@@ -24,7 +28,8 @@ pipelines:
 
     scaler:
       name: SparsityAwareScaler
-      X_sparse: "input:raw_vote_matrix"
+      # TODO: This seems to look a bit more like Polis when raw_vote_matrix.
+      X_sparse: "input:masked_vote_matrix"
 
     clusterer:
       name: BestKMeans

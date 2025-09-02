@@ -5,6 +5,9 @@ from .nodes import (
     split_raw_data,
     dedup_votes,
     make_raw_vote_matrix,
+    make_participant_mask,
+    make_statement_mask,
+    make_masked_vote_matrix,
     create_labels_dataframe,
     create_scatter_plot,
 )
@@ -67,12 +70,31 @@ def create_pipeline(pipeline_key) -> Pipeline:
                 outputs="raw_vote_matrix",
                 name="make_raw_vote_matrix",
             ),
+            # Preprocessing nodes from polis pipeline
+            node(
+                func=make_participant_mask,
+                inputs=["raw_vote_matrix", "params:min_votes_threshold"],
+                outputs="participant_mask",
+                name="make_participant_mask",
+            ),
+            node(
+                func=make_statement_mask,
+                inputs=["raw_comments", "params:strict_moderation"],
+                outputs="statement_mask",
+                name="make_statement_mask",
+            ),
+            node(
+                func=make_masked_vote_matrix,
+                inputs=["raw_vote_matrix", "statement_mask"],
+                outputs="masked_vote_matrix",
+                name="make_masked_vote_matrix",
+            ),
         ]
     )
 
     # Component processing nodes
     step_names = ["imputer", "reducer", "scaler", "clusterer"]
-    prev_output = "raw_vote_matrix"  # Use vote matrix as input to components
+    prev_output = "masked_vote_matrix"  # Use masked vote matrix as input to components
 
     for step in step_names:
         # Check for input: parameters and build catalog inputs list
@@ -106,7 +128,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
     nodes.append(
         node(
             func=create_labels_dataframe,
-            inputs=["clusterer_output", "raw_vote_matrix"],
+            inputs=["clusterer_output", "masked_vote_matrix"],
             outputs="labels_dataframe",
             name="create_labels_dataframe",
         )
