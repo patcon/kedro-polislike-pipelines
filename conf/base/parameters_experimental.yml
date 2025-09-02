@@ -3,6 +3,11 @@ visualization:
   flip_y: false
 
 pipelines:
+  # Default values that get merged into other pipeline configurations.
+  _defaults:
+    reducer:
+      random_state: 42
+
   # The original polis pipeline.
   mean_pca_bestkmeans: &polis_classic
     imputer:

@@ -12,7 +12,9 @@ def register_pipelines() -> dict[str, Pipeline]:
 
     # Load parameters to get pipeline keys from parameters_experimental.yml
     params = config_loader["parameters"]
-    experimental_pipeline_names = list(params.get("pipelines", {}).keys())
+    all_pipeline_keys = params.get("pipelines", {}).keys()
+    # Filter out _defaults as it's not a real pipeline
+    experimental_pipeline_names = [key for key in all_pipeline_keys if key != "_defaults"]
 
     pipelines = {}
 
