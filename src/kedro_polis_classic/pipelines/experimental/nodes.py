@@ -342,29 +342,3 @@ def create_scatter_plot(
     )
 
     return scatter_plot
-
-
-def create_component_node_with_inputs(X, params, step_name, pipeline_key, **potential_catalog_inputs):
-    """
-    Wrapper function that dynamically determines which catalog inputs are needed
-    based on 'input:' parameters and passes only those to run_component_node.
-
-    Args:
-        X: Primary input data
-        params: Step configuration parameters
-        step_name: Name of the pipeline step
-        pipeline_key: Pipeline key (unused but kept for consistency)
-        **potential_catalog_inputs: All potential catalog inputs that might be referenced
-    """
-    # Find which catalog inputs are actually needed by scanning for 'input:' parameters
-    needed_catalog_inputs = {}
-
-    for key, value in params.items():
-        if key != "name" and isinstance(value, str) and value.startswith("input:"):
-            catalog_item_name = value[6:]  # Remove "input:" prefix
-            if catalog_item_name in potential_catalog_inputs:
-                needed_catalog_inputs[catalog_item_name] = potential_catalog_inputs[catalog_item_name]
-            else:
-                raise ValueError(f"Catalog item '{catalog_item_name}' referenced in parameter '{key}' but not available in pipeline inputs")
-
-    return run_component_node(X, params, step_name, **needed_catalog_inputs)

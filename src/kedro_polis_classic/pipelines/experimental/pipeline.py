@@ -7,28 +7,33 @@ from .nodes import (
     make_raw_vote_matrix,
     create_labels_dataframe,
     create_scatter_plot,
-    create_component_node_with_inputs,
 )
 
 
 def _extract_input_parameters(params_dict: dict) -> list[str]:
-    """
-    Extract catalog item names from parameters that start with 'input:'.
-
-    Args:
-        params_dict: Dictionary of parameters that may contain 'input:' values
-
-    Returns:
-        List of catalog item names referenced by 'input:' parameters
-    """
+    """Extract catalog item names from parameters that start with 'input:'."""
     input_catalog_items = []
-
     for key, value in params_dict.items():
         if key != "name" and isinstance(value, str) and value.startswith("input:"):
             catalog_item_name = value[6:]  # Remove "input:" prefix
             input_catalog_items.append(catalog_item_name)
-
     return input_catalog_items
+
+
+def _load_pipeline_params(pipeline_key: str) -> dict:
+    """Load pipeline parameters from the configuration file."""
+    import yaml
+    from pathlib import Path
+
+    try:
+        config_path = Path("conf/base/parameters_experimental.yml")
+        if not config_path.exists():
+            return {}
+        with open(config_path, 'r') as f:
+            params = yaml.safe_load(f)
+        return params.get("pipelines", {}).get(pipeline_key, {})
+    except Exception:
+        return {}
 
 
 def create_pipeline(pipeline_key) -> Pipeline:
@@ -68,33 +73,30 @@ def create_pipeline(pipeline_key) -> Pipeline:
     step_names = ["imputer", "reducer", "scaler", "clusterer"]
     prev_output = "raw_vote_matrix"  # Use vote matrix as input to components
 
+    # Load pipeline parameters to determine required catalog inputs
+    pipeline_params = _load_pipeline_params(pipeline_key)
+
     for step in step_names:
-        # Create a partial function that fixes the step_name and pipeline_key
-        def create_step_func(step_name, pipeline_key):
-            def step_func(X, params, raw_vote_matrix, raw_votes, raw_comments, deduped_votes):
-                return create_component_node_with_inputs(
-                    X=X,
-                    params=params,
-                    step_name=step_name,
-                    pipeline_key=pipeline_key,
-                    raw_vote_matrix=raw_vote_matrix,
-                    raw_votes=raw_votes,
-                    raw_comments=raw_comments,
-                    deduped_votes=deduped_votes,
-                )
-            return step_func
+        # Get step parameters to check for input: references
+        step_params = pipeline_params.get(step, {})
+        required_catalog_inputs = _extract_input_parameters(step_params)
+
+        # Build inputs list - start with the basic inputs, then add catalog inputs
+        inputs = [prev_output, f"params:pipelines.{pipeline_key}.{step}"]
+        inputs.extend(required_catalog_inputs)
+
+        # Simple wrapper that passes catalog inputs as kwargs
+        def create_step_wrapper(step_name, required_inputs):
+            def step_wrapper(*args):
+                X, params = args[0], args[1]
+                catalog_kwargs = {name: args[i + 2] for i, name in enumerate(required_inputs) if i + 2 < len(args)}
+                return run_component_node(X, params, step_name, **catalog_kwargs)
+            return step_wrapper
 
         nodes.append(
             node(
-                func=create_step_func(step, pipeline_key),
-                inputs=[
-                    prev_output,
-                    f"params:pipelines.{pipeline_key}.{step}",
-                    "raw_vote_matrix",
-                    "raw_votes",
-                    "raw_comments",
-                    "deduped_votes",
-                ],
+                func=create_step_wrapper(step, required_catalog_inputs),
+                inputs=inputs,
                 outputs=f"{step}_output",
                 name=f"{step}_node",
             )
