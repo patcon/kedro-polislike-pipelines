@@ -115,3 +115,10 @@ def sample_mask_filter_factory(**kwargs):
     defaults: dict = dict()
     defaults.update(kwargs)
     return SampleMaskFilter(**kwargs)
+
+
+@EstimatorRegistry.register("NoOpFilter")
+def noop_filter_factory(**kwargs):
+    from sklearn.preprocessing import FunctionTransformer
+
+    return FunctionTransformer(**kwargs)
