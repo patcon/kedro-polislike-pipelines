@@ -2,6 +2,14 @@ visualization:
   flip_x: false
   flip_y: false
 
+# NOTES:
+#
+#   - Any `${globals:*}` variables is set in the `globals.yml` file.
+#   - A `null` value is converted to `None` in Python.
+#   - When `random_state` set to null/None, a randomness generator will be used,
+#     and pipelines will be non-deterministic.
+#   - An `&anchor` is a named YAML reference, merged back in via `<<: *anchor`.
+
 pipelines:
   # The original polis pipeline.
   mean_pca_bestkmeans: &polis_classic
