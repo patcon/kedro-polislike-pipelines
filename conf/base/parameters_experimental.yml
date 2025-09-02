@@ -27,7 +27,6 @@ pipelines:
 
     scaler:
       name: SparsityAwareScaler
-      # TODO: This seems to look a bit more like Polis when raw_vote_matrix.
       X_sparse: "input:masked_vote_matrix"
 
     filter:
@@ -39,7 +38,7 @@ pipelines:
       k_bounds: [2, 5]
       random_state: ${globals:random_state}
 
-  mean_pca_bestkmeans_alt:
+  mean_pca_bestkmeans_missing_transforms:
     <<: *polis_classic
     scaler:
       name: NoOpTransformer
@@ -58,7 +57,7 @@ pipelines:
       name: BestHDBSCANFlat
       k_bounds: [2, 5]
 
-  mean_pacmap_kmeans:
+  mean_pacmap_bestkmeans:
     imputer:
       name: SimpleImputer
       strategy: mean
@@ -72,14 +71,15 @@ pipelines:
       name: NoOpTransformer
 
     filter:
-      name: NoOpTransformer
+      name: SampleMaskFilter
+      mask: "input:participant_mask"
 
     clusterer:
-      name: KMeans
-      n_clusters: 5
+      name: BestKMeans
+      k_bounds: [2, 5]
       random_state: ${globals:random_state}
 
-  mean_pacmap_hdbscanflat:
+  mean_pacmap_besthdbscanflat:
     imputer:
       name: SimpleImputer
       strategy: mean
@@ -94,55 +94,43 @@ pipelines:
       name: NoOpTransformer
 
     filter:
-      name: NoOpTransformer
-
-    clusterer:
-      name: HDBSCANFlat
-      n_clusters: 8
-      min_cluster_size: 20
-
-  mean_localmap_hdbscanflat:
-    imputer:
-      name: SimpleImputer
-      strategy: mean
-
-    reducer:
-      name: LocalMAP
-      n_components: 2
-      n_neighbors: null
-      random_state: ${globals:random_state}
-
-    scaler:
-      name: NoOpTransformer
-
-    filter:
-      name: NoOpTransformer
-
-    clusterer:
-      name: HDBSCANFlat
-      n_clusters: 8
-      min_cluster_size: 20
-
-  mean_localmap_besthdbscanflat:
-    imputer:
-      name: SimpleImputer
-      strategy: mean
-
-    reducer:
-      name: LocalMAP
-      n_components: 2
-      n_neighbors: null
-      random_state: ${globals:random_state}
-
-    scaler:
-      name: NoOpTransformer
-
-    filter:
-      name: NoOpTransformer
+      name: SampleMaskFilter
+      mask: "input:participant_mask"
 
     clusterer:
       name: BestHDBSCANFlat
-      k_bounds: [2, 8]
+      k_bounds: [2, 7]
+      min_cluster_size: 20
+
+  mean_localmap_besthdbscanflat_eom: &mean_localmap_besthdbscanflat
+    imputer:
+      name: SimpleImputer
+      strategy: mean
+
+    reducer:
+      name: LocalMAP
+      n_components: 2
+      n_neighbors: null
+      random_state: ${globals:random_state}
+
+    scaler:
+      name: NoOpTransformer
+
+    filter:
+      name: SampleMaskFilter
+      mask: "input:participant_mask"
+
+    clusterer:
+      name: BestHDBSCANFlat
+      k_bounds: [2, 7]
+      min_cluster_size: 20
+      cluster_selection_method: "eom"
+
+  mean_localmap_besthdbscanflat_leaf:
+    <<: *mean_localmap_besthdbscanflat
+    clusterer:
+      name: BestHDBSCANFlat
+      k_bounds: [2, 7]
       min_cluster_size: 20
       cluster_selection_method: "leaf"
 
@@ -161,14 +149,15 @@ pipelines:
       name: NoOpTransformer
 
     filter:
-      name: NoOpTransformer
+      name: SampleMaskFilter
+      mask: "input:participant_mask"
 
     clusterer:
       name: BestKMeans
-      k_bounds: [2, 10]
+      k_bounds: [2, 7]
       random_state: ${globals:random_state}
 
-  knn5d_pacmap_besthdbscanflat:
+  knn5d_pacmap_besthdbscanflat: &knn5d_pacmap_besthdbscanflat
     imputer:
       name: KNNImputer
       n_neighbors: 5
@@ -184,13 +173,29 @@ pipelines:
       name: NoOpTransformer
 
     filter:
-      name: NoOpTransformer
+      name: SampleMaskFilter
+      mask: "input:participant_mask"
 
     clusterer:
       name: BestHDBSCANFlat
-      k_bounds: [2, 10]
+      k_bounds: [2, 7]
 
-  knn5d_pacmap_kmeans: &knn5d_pacmap_kmeans
+  knn5d_localmap_besthdbscanflat:
+    <<: *knn5d_pacmap_besthdbscanflat
+    reducer:
+      name: LocalMAP
+      n_components: 2
+      n_neighbors: null
+      random_state: ${globals:random_state}
+
+  knn5d_pca_besthdbscanflat:
+    <<: *knn5d_pacmap_besthdbscanflat
+    reducer:
+      name: PCA
+      n_components: 2
+      random_state: ${globals:random_state}
+
+  knn5d_pacmap_bestkmeans: &knn5d_pacmap_bestkmeans
     imputer:
       name: KNNImputer
       n_neighbors: 5
@@ -206,16 +211,24 @@ pipelines:
       name: NoOpTransformer
 
     filter:
-      name: NoOpTransformer
+      name: SampleMaskFilter
+      mask: "input:participant_mask"
 
     clusterer:
-      name: KMeans
-      n_clusters: 5
+      name: BestKMeans
+      k_bounds: [2, 5]
       random_state: ${globals:random_state}
 
-  knn5d_localmap_kmeans:
-    <<: *knn5d_pacmap_kmeans
+  knn5d_localmap_bestkmeans:
+    <<: *knn5d_pacmap_bestkmeans
     reducer:
       <<: *pacmap_reducer
       name: LocalMAP
+      random_state: ${globals:random_state}
+
+  knn5d_pca_bestkmeans:
+    <<: *knn5d_pacmap_bestkmeans
+    reducer:
+      name: PCA
+      n_components: 2
       random_state: ${globals:random_state}
