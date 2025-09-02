@@ -7,7 +7,28 @@ from .nodes import (
     make_raw_vote_matrix,
     create_labels_dataframe,
     create_scatter_plot,
+    create_component_node_with_inputs,
 )
+
+
+def _extract_input_parameters(params_dict: dict) -> list[str]:
+    """
+    Extract catalog item names from parameters that start with 'input:'.
+
+    Args:
+        params_dict: Dictionary of parameters that may contain 'input:' values
+
+    Returns:
+        List of catalog item names referenced by 'input:' parameters
+    """
+    input_catalog_items = []
+
+    for key, value in params_dict.items():
+        if key != "name" and isinstance(value, str) and value.startswith("input:"):
+            catalog_item_name = value[6:]  # Remove "input:" prefix
+            input_catalog_items.append(catalog_item_name)
+
+    return input_catalog_items
 
 
 def create_pipeline(pipeline_key) -> Pipeline:
@@ -48,13 +69,32 @@ def create_pipeline(pipeline_key) -> Pipeline:
     prev_output = "raw_vote_matrix"  # Use vote matrix as input to components
 
     for step in step_names:
-        # use lambda with default argument to fix step_name
+        # Create a partial function that fixes the step_name and pipeline_key
+        def create_step_func(step_name, pipeline_key):
+            def step_func(X, params, raw_vote_matrix, raw_votes, raw_comments, deduped_votes):
+                return create_component_node_with_inputs(
+                    X=X,
+                    params=params,
+                    step_name=step_name,
+                    pipeline_key=pipeline_key,
+                    raw_vote_matrix=raw_vote_matrix,
+                    raw_votes=raw_votes,
+                    raw_comments=raw_comments,
+                    deduped_votes=deduped_votes,
+                )
+            return step_func
+
         nodes.append(
             node(
-                func=lambda X, params, step_name=step: run_component_node(
-                    X, params, step_name
-                ),
-                inputs=[prev_output, f"params:pipelines.{pipeline_key}.{step}"],
+                func=create_step_func(step, pipeline_key),
+                inputs=[
+                    prev_output,
+                    f"params:pipelines.{pipeline_key}.{step}",
+                    "raw_vote_matrix",
+                    "raw_votes",
+                    "raw_comments",
+                    "deduped_votes",
+                ],
                 outputs=f"{step}_output",
                 name=f"{step}_node",
             )

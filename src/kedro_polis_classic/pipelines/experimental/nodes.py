@@ -5,22 +5,55 @@ import plotly.express as px
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
 
 
-def run_component_node(X, params, step_name):
+def run_component_node(X, params, step_name, **catalog_inputs):
     """
     Runs a single pipeline component.
     X: input features
     params: full nested pipeline parameters dict
     step_name: which step to build (imputer/reducer/scaler/clusterer)
+    **catalog_inputs: catalog items for parameters that start with 'input:'
     """
     # copy to avoid mutating params
-    step_config = params
-    pipeline = build_pipeline_from_params({step_name: step_config})
+    step_config = params.copy()
+
+    # Process input: parameters by replacing them with actual catalog data
+    processed_config = _process_input_parameters(step_config, catalog_inputs)
+
+    pipeline = build_pipeline_from_params({step_name: processed_config})
 
     # For clusterer, use fit_predict to get labels instead of fit_transform
     if step_name == "clusterer":
         return pipeline.fit_predict(X)
     else:
         return pipeline.fit_transform(X)
+
+
+def _process_input_parameters(config: dict, catalog_inputs: dict) -> dict:
+    """
+    Process configuration parameters, replacing 'input:' values with catalog data.
+
+    Args:
+        config: Configuration dictionary that may contain 'input:' values
+        catalog_inputs: Dictionary mapping catalog item names to their data
+
+    Returns:
+        Processed configuration with 'input:' values replaced by catalog data
+    """
+    processed_config = {}
+
+    for key, value in config.items():
+        if isinstance(value, str) and value.startswith("input:"):
+            # Extract the catalog item name (everything after "input:")
+            catalog_item_name = value[6:]  # Remove "input:" prefix
+
+            if catalog_item_name in catalog_inputs:
+                processed_config[key] = catalog_inputs[catalog_item_name]
+            else:
+                raise ValueError(f"Catalog item '{catalog_item_name}' not found in inputs for parameter '{key}'")
+        else:
+            processed_config[key] = value
+
+    return processed_config
 
 
 # Minimal data loader nodes from original polis pipeline
@@ -309,3 +342,29 @@ def create_scatter_plot(
     )
 
     return scatter_plot
+
+
+def create_component_node_with_inputs(X, params, step_name, pipeline_key, **potential_catalog_inputs):
+    """
+    Wrapper function that dynamically determines which catalog inputs are needed
+    based on 'input:' parameters and passes only those to run_component_node.
+
+    Args:
+        X: Primary input data
+        params: Step configuration parameters
+        step_name: Name of the pipeline step
+        pipeline_key: Pipeline key (unused but kept for consistency)
+        **potential_catalog_inputs: All potential catalog inputs that might be referenced
+    """
+    # Find which catalog inputs are actually needed by scanning for 'input:' parameters
+    needed_catalog_inputs = {}
+
+    for key, value in params.items():
+        if key != "name" and isinstance(value, str) and value.startswith("input:"):
+            catalog_item_name = value[6:]  # Remove "input:" prefix
+            if catalog_item_name in potential_catalog_inputs:
+                needed_catalog_inputs[catalog_item_name] = potential_catalog_inputs[catalog_item_name]
+            else:
+                raise ValueError(f"Catalog item '{catalog_item_name}' referenced in parameter '{key}' but not available in pipeline inputs")
+
+    return run_component_node(X, params, step_name, **needed_catalog_inputs)

@@ -9,6 +9,7 @@ visualization:
 #   - When `random_state` set to null/None, a randomness generator will be used,
 #     and pipelines will be non-deterministic.
 #   - An `&anchor` is a named YAML reference, merged back in via `<<: *anchor`.
+#   - An `input:*` value means that estimator will use that catalog item as it's input.
 
 pipelines:
   # The original polis pipeline.
@@ -22,12 +23,18 @@ pipelines:
       n_components: 2
 
     scaler:
-      name: NoOpScaler
+      name: SparsityAwareScaler
+      X_sparse: "input:raw_vote_matrix"
 
     clusterer:
       name: BestKMeans
       k_bounds: [2, 5]
       random_state: ${globals:random_state}
+
+  mean_pca_bestkmeans_alt:
+    <<: *polis_classic
+    scaler:
+      name: NoOpScaler
 
   mean_pca_hdbscan:
     <<: *polis_classic

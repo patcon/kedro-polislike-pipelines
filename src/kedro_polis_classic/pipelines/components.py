@@ -55,6 +55,11 @@ def noop_scaler_factory(**kwargs):
 
     return FunctionTransformer(**kwargs)
 
+@ComponentRegistry.register("SparsityAwareScaler")
+def noop_scaler_factory(**kwargs):
+    from reddwarf.sklearn.transformers import SparsityAwareScaler
+
+    return SparsityAwareScaler(**kwargs)
 
 # Clusterers
 @ComponentRegistry.register("KMeans")
