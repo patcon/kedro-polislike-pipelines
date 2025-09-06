@@ -4,3 +4,6 @@
 - [ ] add HDBSCANFlat estimator
 - [ ] add BestHDBSCANFlat estimator
 - [ ] add SparsityAwareScaler estimator
+- [ ] fix `mean_pacmap_besthdbscanflat`
+- [ ] fix `mean_localmap_besthdbscanflat_eom`
+- [ ] fix `mean_localmap_besthdbscanflat_leaf`
