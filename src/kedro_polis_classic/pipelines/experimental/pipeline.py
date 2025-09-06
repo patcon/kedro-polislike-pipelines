@@ -37,6 +37,7 @@ def _extract_input_parameters(params_dict: dict) -> list[str]:
             input_catalog_items.append(catalog_item_name)
     return input_catalog_items
 
+
 def create_pipeline(pipeline_key) -> Pipeline:
     # Load pipeline parameters
     pipelines_config = load_pipelines_config()
@@ -113,8 +114,13 @@ def create_pipeline(pipeline_key) -> Pipeline:
             def estimator_wrapper(*args):
                 X, params = args[0], args[1]
                 # Map remaining args to catalog input names
-                catalog_kwargs = {name: args[i + 2] for i, name in enumerate(required_inputs) if i + 2 < len(args)}
+                catalog_kwargs = {
+                    name: args[i + 2]
+                    for i, name in enumerate(required_inputs)
+                    if i + 2 < len(args)
+                }
                 return run_component_node(X, params, step_name, **catalog_kwargs)
+
             return estimator_wrapper
 
         nodes.append(
@@ -147,6 +153,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
     def create_image_saver_wrapper(pipeline_name):
         def image_saver_wrapper(scatter_plot):
             return save_scatter_plot_image(scatter_plot, pipeline_name)
+
         return image_saver_wrapper
 
     nodes.append(

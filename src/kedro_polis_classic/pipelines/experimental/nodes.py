@@ -50,7 +50,9 @@ def _process_input_parameters(config: dict, catalog_inputs: dict) -> dict:
             if catalog_item_name in catalog_inputs:
                 processed_config[key] = catalog_inputs[catalog_item_name]
             else:
-                raise ValueError(f"Catalog item '{catalog_item_name}' not found in inputs for parameter '{key}'")
+                raise ValueError(
+                    f"Catalog item '{catalog_item_name}' not found in inputs for parameter '{key}'"
+                )
         else:
             processed_config[key] = value
 
@@ -96,8 +98,11 @@ def make_raw_vote_matrix(deduped_votes: pd.DataFrame) -> pd.DataFrame:
 
 # Preprocessing nodes from polis pipeline
 
-@ensure_series('statement_mask')
-def _apply_statement_filter(matrix: pd.DataFrame, statement_mask: pd.Series, filter_type: str = "fill_zero") -> pd.DataFrame:
+
+@ensure_series("statement_mask")
+def _apply_statement_filter(
+    matrix: pd.DataFrame, statement_mask: pd.Series, filter_type: str = "fill_zero"
+) -> pd.DataFrame:
     """Filter out moderated statements from the vote matrix
 
     Args:
@@ -122,25 +127,33 @@ def _apply_statement_filter(matrix: pd.DataFrame, statement_mask: pd.Series, fil
         # Get statement IDs that should be filtered out (False in mask)
         filtered_statement_ids = statement_mask.loc[~statement_mask].index
         # Fill filtered columns with 0, only for columns that exist in the matrix
-        existing_filtered_cols = [col for col in filtered_statement_ids if col in result.columns]
+        existing_filtered_cols = [
+            col for col in filtered_statement_ids if col in result.columns
+        ]
         if existing_filtered_cols:
             result.loc[:, existing_filtered_cols] = 0
         return result
 
     else:
-        raise ValueError(f"Invalid filter_type '{filter_type}'. Must be 'drop' or 'fill_zero'.")
+        raise ValueError(
+            f"Invalid filter_type '{filter_type}'. Must be 'drop' or 'fill_zero'."
+        )
 
 
 def make_participant_mask(matrix: pd.DataFrame, min_votes: int = 7) -> pd.Series:
     """Create a mask for participants who meet the minimum vote threshold"""
     mask = matrix.count(axis="columns") >= min_votes
-    
+
     mask.index.name = "voter-id"
     mask.name = "participant-in"
     return mask
 
 
-def make_statement_mask(comments: pd.DataFrame, strict_moderation: bool = False, mask_out_is_meta: bool = True) -> pd.Series:
+def make_statement_mask(
+    comments: pd.DataFrame,
+    strict_moderation: bool = False,
+    mask_out_is_meta: bool = True,
+) -> pd.Series:
     """Return a mask for unmoderated statements.
 
     If `strict_moderation=True`, only keep comments explicitly moderated in (`moderated=1`).
@@ -238,7 +251,6 @@ def _create_scatter_plot(
     Returns:
         A Plotly figure (2D or 3D scatter plot)
     """
-    import numpy as np
 
     # Create a copy of the data to avoid modifying the original
     plot_data = data.copy()
@@ -431,32 +443,32 @@ def save_scatter_plot_image(
 ) -> str:
     """
     Save scatter plot as an image file with ISO timestamp prefix.
-    
+
     Args:
         scatter_plot: Plotly figure to save
         pipeline_name: Name of the pipeline for the filename
-        
+
     Returns:
         The filepath where the image was saved
     """
     from datetime import datetime
     import os
-    
+
     # Create ISO timestamp prefix (YYYY-MM-DD-HH-MM format)
     timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M")
-    
+
     # Create filename with timestamp prefix
     filename = f"{timestamp}_{pipeline_name}_scatter_plot.png"
-    
+
     # Create the directory path
     output_dir = f"data/{pipeline_name}/08_reporting"
     os.makedirs(output_dir, exist_ok=True)
-    
+
     # Full filepath
     filepath = os.path.join(output_dir, filename)
-    
+
     # Save the plot as PNG image
     scatter_plot.write_image(filepath, width=800, height=600, scale=2)
-    
+
     print(f"Scatter plot image saved to: {filepath}")
     return filepath

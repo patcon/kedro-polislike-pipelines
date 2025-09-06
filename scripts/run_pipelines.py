@@ -94,7 +94,9 @@ def filter_pipelines(requested: List[str], available: Set[str]) -> List[str]:
     return unique_pipelines
 
 
-def run_pipeline(pipeline_name: str, current: int, total: int, params: str | None = None) -> bool:
+def run_pipeline(
+    pipeline_name: str, current: int, total: int, params: str | None = None
+) -> bool:
     """Run a single pipeline using kedro run command."""
     print(f"\n{'=' * 60}")
     print(f"Running pipeline ({current}/{total}): {pipeline_name}")

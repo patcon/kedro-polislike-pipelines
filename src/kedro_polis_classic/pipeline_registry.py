@@ -12,7 +12,9 @@ def register_pipelines() -> dict[str, Pipeline]:
     pipelines = {}
 
     # Add shorthand name for original polis pipeline.
-    pipelines["polis_classic"] = experiment_pipeline.create_pipeline("mean_pca_bestkmeans")
+    pipelines["polis_classic"] = experiment_pipeline.create_pipeline(
+        "mean_pca_bestkmeans"
+    )
 
     # Add experimental pipelines using iteration
     for name in experimental_pipeline_names:

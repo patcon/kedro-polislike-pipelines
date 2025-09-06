@@ -2,6 +2,7 @@ import pandas as pd
 import functools
 import inspect
 
+
 def process_series(x: pd.Series | pd.DataFrame) -> pd.Series:
     """Ensure x is a pandas Series (e.g., extract first column of a single-column DataFrame)."""
     if isinstance(x, pd.DataFrame):
@@ -16,6 +17,7 @@ def process_series(x: pd.Series | pd.DataFrame) -> pd.Series:
 
 def ensure_series(argname: str):
     """Decorator to apply `process_series` to a named argument."""
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -25,10 +27,13 @@ def ensure_series(argname: str):
             bound.apply_defaults()
 
             if argname not in bound.arguments:
-                raise ValueError(f"Argument '{argname}' not found when calling {func.__name__}")
+                raise ValueError(
+                    f"Argument '{argname}' not found when calling {func.__name__}"
+                )
 
             bound.arguments[argname] = process_series(bound.arguments[argname])
             return func(*bound.args, **bound.kwargs)
 
         return wrapper
+
     return decorator

@@ -2,6 +2,7 @@ from kedro_datasets.pandas.csv_dataset import CSVDataset, TablePreview
 from copy import deepcopy
 import pandas as pd
 
+
 class CustomCSVDataset(CSVDataset):
     def __init__(self, *args, **kwargs):
         """

@@ -2,8 +2,14 @@ import pandas as pd
 import requests
 from kedro.io import AbstractDataset
 
+
 class PolisAPIDataset(AbstractDataset):
-    def __init__(self, polis_id: str, base_url: str | None = None, repair_is_meta_column: bool = True):
+    def __init__(
+        self,
+        polis_id: str,
+        base_url: str | None = None,
+        repair_is_meta_column: bool = True,
+    ):
         self.polis_id = polis_id
         self.base_url = base_url if base_url else "https://pol.is"
         self.repair_is_meta_column = repair_is_meta_column
@@ -106,7 +112,9 @@ class PolisAPIDataset(AbstractDataset):
             raise ValueError(f"conversation_id not found for report {self.report_id}")
         return conversation_id
 
-    def _add_is_meta_column(self, comments: pd.DataFrame, conversation_id: str) -> pd.DataFrame:
+    def _add_is_meta_column(
+        self, comments: pd.DataFrame, conversation_id: str
+    ) -> pd.DataFrame:
         """
         Adds an 'is-meta' column to the comments DataFrame by fetching comment data from the API.
         """
