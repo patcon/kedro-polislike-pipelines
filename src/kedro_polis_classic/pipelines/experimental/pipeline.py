@@ -49,7 +49,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
         [
             node(
                 func=load_polis_data,
-                inputs="params:report_id",
+                inputs="params:polis_id",
                 outputs="raw_data",
                 name="load_polis_data",
             ),

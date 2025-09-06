@@ -169,8 +169,8 @@ def _create_scatter_plot(
 
 # Nodes
 
-def load_polis_data(report_id: str):
-    dataset = PolisAPIDataset(report_id=report_id)
+def load_polis_data(polis_id: str):
+    dataset = PolisAPIDataset(polis_id=polis_id)
     return dataset.load()
 
 def split_raw_data(raw_data: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
