@@ -267,6 +267,8 @@ def _create_scatter_plot(
 
     # Add color values to the dataframe for plotly express
     plot_data[colorbar_title] = color_values
+    color_continuous_scale = "YlOrRd"
+    color_discrete_scale = px.colors.qualitative.Set1
 
     # Add participant labels for hover
     plot_data["Participant"] = [f"Participant {idx}" for idx in range(len(plot_data))]
@@ -286,7 +288,7 @@ def _create_scatter_plot(
                 "color": colorbar_title,
                 "hover_name": "Participant",
                 "title": title,
-                "color_discrete_sequence": px.colors.qualitative.Set1,
+                "color_discrete_sequence": color_discrete_scale,
             }
             if category_orders is not None:
                 kwargs["category_orders"] = category_orders
@@ -302,7 +304,7 @@ def _create_scatter_plot(
                 color=colorbar_title,
                 hover_name="Participant",
                 title=title,
-                color_continuous_scale="Viridis",
+                color_continuous_scale=color_continuous_scale,
             )
 
         # Update axis labels
@@ -327,7 +329,7 @@ def _create_scatter_plot(
                 "color": colorbar_title,
                 "hover_name": "Participant",
                 "title": title,
-                "color_discrete_sequence": px.colors.qualitative.Set1,
+                "color_discrete_sequence": color_discrete_scale,
             }
             if category_orders is not None:
                 kwargs["category_orders"] = category_orders
@@ -342,7 +344,7 @@ def _create_scatter_plot(
                 color=colorbar_title,
                 hover_name="Participant",
                 title=title,
-                color_continuous_scale="Viridis",
+                color_continuous_scale=color_continuous_scale,
             )
 
         # Update axis labels and layout
@@ -432,6 +434,135 @@ def create_scatter_plot(
         title="Experimental Pipeline: Participant Projections (Colored by Cluster)",
         use_categorical_colors=True,
         category_orders=category_orders,
+    )
+
+    return scatter_plot
+
+
+@ensure_series("participant_mask")
+def create_scatter_plot_by_participant_id(
+    filter_output,  # Can be numpy array or DataFrame - filtered data from SampleMaskFilter
+    participant_mask: pd.Series,  # Mask indicating which participants are included
+    flip_x: bool = False,
+    flip_y: bool = False,
+) -> go.Figure:
+    """
+    Create a scatter plot colored by participant ID using viridis color scheme.
+    Supports 2D and 3D projections.
+
+    Args:
+        filter_output: Numpy array or DataFrame with filtered components from the experimental pipeline
+        raw_vote_matrix: Raw vote matrix (not used in this function but kept for consistent interface)
+        participant_mask: Boolean mask indicating which participants are included in the filtered data
+        flip_x: If True, flip the x-axis by multiplying by -1
+        flip_y: If True, flip the y-axis by multiplying by -1
+
+    Returns:
+        Plotly figure showing the scatter plot colored by participant ID
+    """
+    import numpy as np
+
+    # Get the participant IDs that are included (where mask is True)
+    included_participant_ids = participant_mask.index[participant_mask]
+
+    # Convert numpy array to DataFrame if needed
+    if isinstance(filter_output, np.ndarray):
+        # Create generic column names based on dimensions
+        n_components = filter_output.shape[1] if len(filter_output.shape) > 1 else 1
+        if n_components <= 3:
+            column_names = ["x", "y", "z"][:n_components]
+        else:
+            column_names = [f"PC{i + 1}" for i in range(n_components)]
+
+        # Create DataFrame with actual participant IDs as index
+        data = pd.DataFrame(
+            filter_output,
+            index=included_participant_ids,  # type: ignore
+            columns=pd.Index(column_names),
+        )
+    else:
+        # Already a DataFrame, but ensure it has the correct index
+        data = filter_output.copy()
+        data.index = included_participant_ids
+
+    # Get participant IDs as numeric values for continuous color scale
+    participant_ids = pd.Series(data.index, index=data.index)
+
+    # Create scatter plot colored by participant ID
+    scatter_plot = _create_scatter_plot(
+        data=data,
+        flip_x=flip_x,
+        flip_y=flip_y,
+        colorbar_title="Participant ID",
+        color_values=participant_ids,
+        title="Experimental Pipeline: Participant Projections (Colored by Participant ID)",
+        use_categorical_colors=False,  # Use continuous viridis color scale
+    )
+
+    return scatter_plot
+
+
+@ensure_series("participant_mask")
+def create_scatter_plot_by_vote_proportions(
+    filter_output,  # Can be numpy array or DataFrame - filtered data from SampleMaskFilter
+    raw_vote_matrix: pd.DataFrame,  # Raw vote matrix to calculate vote counts from
+    participant_mask: pd.Series,  # Mask indicating which participants are included
+    flip_x: bool = False,
+    flip_y: bool = False,
+) -> go.Figure:
+    """
+    Create a scatter plot colored by total number of votes cast by each participant.
+    Supports 2D and 3D projections.
+
+    Args:
+        filter_output: Numpy array or DataFrame with filtered components from the experimental pipeline
+        raw_vote_matrix: Raw vote matrix to calculate vote counts from
+        participant_mask: Boolean mask indicating which participants are included in the filtered data
+        flip_x: If True, flip the x-axis by multiplying by -1
+        flip_y: If True, flip the y-axis by multiplying by -1
+
+    Returns:
+        Plotly figure showing the scatter plot colored by total vote counts
+    """
+    import numpy as np
+
+    # Get the participant IDs that are included (where mask is True)
+    included_participant_ids = participant_mask.index[participant_mask]
+
+    # Convert numpy array to DataFrame if needed
+    if isinstance(filter_output, np.ndarray):
+        # Create generic column names based on dimensions
+        n_components = filter_output.shape[1] if len(filter_output.shape) > 1 else 1
+        if n_components <= 3:
+            column_names = ["x", "y", "z"][:n_components]
+        else:
+            column_names = [f"PC{i + 1}" for i in range(n_components)]
+
+        # Create DataFrame with actual participant IDs as index
+        data = pd.DataFrame(
+            filter_output,
+            index=included_participant_ids,  # type: ignore
+            columns=pd.Index(column_names),
+        )
+    else:
+        # Already a DataFrame, but ensure it has the correct index
+        data = filter_output.copy()
+        data.index = included_participant_ids
+
+    # Calculate total number of votes cast by each included participant
+    # Vote values: 1 = agree, -1 = disagree, 0 = pass, NaN = no vote
+    # Count all non-NaN values (any vote cast) for the included participants only
+    total_votes_cast = raw_vote_matrix.loc[included_participant_ids].count(axis=1)
+
+    # Create scatter plot colored by total vote count
+    scatter_plot = _create_scatter_plot(
+        data=data,
+        flip_x=flip_x,
+        flip_y=flip_y,
+        colorbar_title="Total Votes Cast",
+        color_values=total_votes_cast,
+        title="Experimental Pipeline: Participant Projections (Colored by Total Votes Cast)",
+        use_categorical_colors=False,  # Use continuous viridis color scale
     )
 
     return scatter_plot

@@ -50,9 +50,37 @@
     kedro-viz:
       layer: reporting
 
+"{pipeline_name}__scatter_plot_by_participant_id":
+  type: plotly.JSONDataset
+  filepath: data/{pipeline_name}/08_reporting/scatter_plot_by_participant_id.json
+  metadata:
+    kedro-viz:
+      layer: reporting
+
+"{pipeline_name}__scatter_plot_by_vote_proportions":
+  type: plotly.JSONDataset
+  filepath: data/{pipeline_name}/08_reporting/scatter_plot_by_vote_proportions.json
+  metadata:
+    kedro-viz:
+      layer: reporting
+
 "{pipeline_name}__scatter_plot_image_path":
   type: text.TextDataset
   filepath: data/{pipeline_name}/08_reporting/scatter_plot_image_path.txt
+  metadata:
+    kedro-viz:
+      layer: reporting
+
+"{pipeline_name}__scatter_plot_by_participant_id_image_path":
+  type: text.TextDataset
+  filepath: data/{pipeline_name}/08_reporting/scatter_plot_by_participant_id_image_path.txt
+  metadata:
+    kedro-viz:
+      layer: reporting
+
+"{pipeline_name}__scatter_plot_by_vote_proportions_image_path":
+  type: text.TextDataset
+  filepath: data/{pipeline_name}/08_reporting/scatter_plot_by_vote_proportions_image_path.txt
   metadata:
     kedro-viz:
       layer: reporting

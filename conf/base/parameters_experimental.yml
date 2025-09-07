@@ -43,8 +43,9 @@ pipelines:
     scaler:
       name: NoOpTransformer
 
-    filter:
-      name: NoOpTransformer
+    # # Breaks plots.
+    # filter:
+    #   name: NoOpTransformer
 
   mean_pca_hdbscan:
     <<: *polis_classic

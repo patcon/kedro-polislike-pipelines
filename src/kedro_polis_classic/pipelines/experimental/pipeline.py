@@ -10,6 +10,8 @@ from .nodes import (
     make_masked_vote_matrix,
     create_labels_dataframe,
     create_scatter_plot,
+    create_scatter_plot_by_participant_id,
+    create_scatter_plot_by_vote_proportions,
     save_scatter_plot_image,
 )
 from ..config import load_pipelines_config
@@ -133,8 +135,10 @@ def create_pipeline(pipeline_key) -> Pipeline:
         )
         prev_output = f"{pipeline_key}__{step}_output"
 
-    # Add scatter plot visualization node
+    # Add scatter plot visualization nodes
     # Always use filter_output since we now guarantee a filter step exists
+
+    # Original scatter plot colored by cluster
     nodes.append(
         node(
             func=create_scatter_plot,
@@ -149,19 +153,48 @@ def create_pipeline(pipeline_key) -> Pipeline:
         )
     )
 
-    # Add scatter plot image saving node
-    def create_image_saver_wrapper(pipeline_name):
+    # Scatter plot colored by participant ID
+    nodes.append(
+        node(
+            func=create_scatter_plot_by_participant_id,
+            inputs=[
+                f"{pipeline_key}__filter_output",
+                "participant_mask",
+                "params:visualization.flip_x",
+                "params:visualization.flip_y",
+            ],
+            outputs=f"{pipeline_key}__scatter_plot_by_participant_id",
+            name="create_scatter_plot_by_participant_id",
+        )
+    )
+
+    # Add scatter plot image saving nodes
+    def create_image_saver_wrapper(pipeline_name, plot_suffix=""):
         def image_saver_wrapper(scatter_plot):
-            return save_scatter_plot_image(scatter_plot, pipeline_name)
+            filename_suffix = f"_{plot_suffix}" if plot_suffix else ""
+            return save_scatter_plot_image(
+                scatter_plot, f"{pipeline_name}{filename_suffix}"
+            )
 
         return image_saver_wrapper
 
+    # Save original cluster plot
     nodes.append(
         node(
-            func=create_image_saver_wrapper(pipeline_key),
+            func=create_image_saver_wrapper(pipeline_key, "cluster"),
             inputs=f"{pipeline_key}__scatter_plot",
             outputs=f"{pipeline_key}__scatter_plot_image_path",
             name="save_scatter_plot_image",
+        )
+    )
+
+    # Save participant ID plot
+    nodes.append(
+        node(
+            func=create_image_saver_wrapper(pipeline_key, "participant_id"),
+            inputs=f"{pipeline_key}__scatter_plot_by_participant_id",
+            outputs=f"{pipeline_key}__scatter_plot_by_participant_id_image_path",
+            name="save_scatter_plot_by_participant_id_image",
         )
     )
 
