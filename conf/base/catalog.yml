@@ -1,6 +1,8 @@
-# raw_data:
-#   type: kedro_polis_classic.datasets.polis_api.PolisAPIDataset
-#   report_id: null
+raw_data:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: raw
 
 raw_votes:
   type: pandas.CSVDataset
@@ -66,9 +68,9 @@ participant_mask:
     kedro-viz:
       layer: primary
 
-statement_filter_mask:
+statement_mask:
   type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/02_intermediate/statement_filter_mask.csv
+  filepath: data/02_intermediate/statement_mask.csv
   metadata:
     index_in_preview: true
     save_load_index: true

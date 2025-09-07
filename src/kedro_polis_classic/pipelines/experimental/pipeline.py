@@ -1,13 +1,6 @@
 from kedro.pipeline import Pipeline, node
 from .nodes import (
     run_component_node,
-    load_polis_data,
-    split_raw_data,
-    dedup_votes,
-    make_raw_vote_matrix,
-    make_participant_mask,
-    make_statement_mask,
-    make_masked_vote_matrix,
     create_labels_dataframe,
     create_scatter_plot,
     create_scatter_plot_by_participant_id,
@@ -15,6 +8,7 @@ from .nodes import (
     save_scatter_plot_image,
 )
 from ..config import load_pipelines_config
+from ..preprocessing.pipeline import create_pipeline as create_preprocessing_pipeline
 
 
 def _extract_input_parameters(params_dict: dict) -> list[str]:
@@ -41,60 +35,40 @@ def _extract_input_parameters(params_dict: dict) -> list[str]:
 
 
 def create_pipeline(pipeline_key) -> Pipeline:
+    """
+    Create an experimental pipeline that includes preprocessing and experimental processing.
+    
+    This pipeline combines the preprocessing pipeline (with namespace) and the experimental
+    processing nodes into a single pipeline that can be run independently.
+    
+    Args:
+        pipeline_key: The key identifying which pipeline configuration to use
+        
+    Returns:
+        Pipeline: A Kedro pipeline containing both preprocessing and experimental nodes
+    """
     # Load pipeline parameters
     pipelines_config = load_pipelines_config()
     pipeline_params = pipelines_config.get(pipeline_key, {})
 
-    nodes = []
-
-    # Data loading nodes
-    nodes.extend(
-        [
-            node(
-                func=load_polis_data,
-                inputs="params:polis_id",
-                outputs="raw_data",
-                name="load_polis_data",
-            ),
-            node(
-                func=split_raw_data,
-                inputs="raw_data",
-                outputs=["raw_votes", "raw_comments"],
-                name="split_raw_data",
-            ),
-            node(
-                func=dedup_votes,
-                inputs="raw_votes",
-                outputs="deduped_votes",
-                name="dedup_votes",
-            ),
-            node(
-                func=make_raw_vote_matrix,
-                inputs="deduped_votes",
-                outputs="raw_vote_matrix",
-                name="make_raw_vote_matrix",
-            ),
-            # Preprocessing nodes from polis pipeline
-            node(
-                func=make_participant_mask,
-                inputs=["raw_vote_matrix", "params:min_votes_threshold"],
-                outputs="participant_mask",
-                name="make_participant_mask",
-            ),
-            node(
-                func=make_statement_mask,
-                inputs=["raw_comments"],
-                outputs="statement_mask",
-                name="make_statement_mask",
-            ),
-            node(
-                func=make_masked_vote_matrix,
-                inputs=["raw_vote_matrix", "statement_mask"],
-                outputs="masked_vote_matrix",
-                name="make_masked_vote_matrix",
-            ),
-        ]
+    # Create the preprocessing pipeline with namespace
+    preprocessing_pipeline = Pipeline(
+        create_preprocessing_pipeline(),
+        namespace="preprocessing",
+        parameters={
+            "params:polis_id",  # Keep polis_id parameter without namespace
+            "params:min_votes_threshold",  # Keep min_votes_threshold parameter without namespace
+        },
+        outputs={
+            "masked_vote_matrix",  # Keep masked_vote_matrix output without namespace
+            "participant_mask",    # Keep participant_mask output without namespace
+            "statement_mask",      # Keep statement_mask output without namespace
+            "raw_vote_matrix",     # Keep raw_vote_matrix output without namespace
+            "raw_comments",        # Keep raw_comments output without namespace
+        }
     )
+
+    nodes = []
 
     # Component processing nodes
     step_names = ["imputer", "reducer", "scaler", "filter", "clusterer"]
@@ -198,4 +172,5 @@ def create_pipeline(pipeline_key) -> Pipeline:
         )
     )
 
-    return Pipeline(nodes)
+    # Combine preprocessing pipeline with experimental nodes
+    return preprocessing_pipeline + Pipeline(nodes)
