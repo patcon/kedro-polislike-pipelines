@@ -61,7 +61,7 @@ class PolisAPIDataset(AbstractDataset):
 
         from reddwarf.data_loader import Loader
 
-        loader = Loader(conversation_id=self.conversation_id)
+        loader = Loader(conversation_id=self.conversation_id, polis_instance_url=self.base_url)
 
         # Convert the list data to DataFrames
         comments = pd.DataFrame(loader.comments_data)

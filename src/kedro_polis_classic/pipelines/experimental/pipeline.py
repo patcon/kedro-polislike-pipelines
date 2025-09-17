@@ -55,6 +55,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
     preprocessing_pipeline = Pipeline(
         create_preprocessing_pipeline(),
         namespace="preprocessing",
+        prefix_datasets_with_namespace=False,
         parameters={
             "params:polis_id",  # Keep polis_id parameter without namespace
             "params:min_votes_threshold",  # Keep min_votes_threshold parameter without namespace
