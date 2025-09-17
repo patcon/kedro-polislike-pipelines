@@ -201,18 +201,20 @@ def split_raw_data(raw_data: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def dedup_votes(raw_votes: pd.DataFrame) -> pd.DataFrame:
     # 1. Sort so newest votes are last
-    votes_sorted = raw_votes.sort_values("timestamp")
+    votes_sorted = raw_votes.sort_values("modified")
 
     # 2. Drop duplicates, keeping the most recent
     deduped_votes = votes_sorted.drop_duplicates(
-        subset=["voter-id", "comment-id"], keep="last"
+        subset=["participant_id", "statement_id"], keep="last"
     )
 
     return deduped_votes
 
 
 def make_raw_vote_matrix(deduped_votes: pd.DataFrame) -> pd.DataFrame:
-    matrix = deduped_votes.pivot(index="voter-id", columns="comment-id", values="vote")
+    matrix = deduped_votes.pivot(
+        index="participant_id", columns="statement_id", values="vote"
+    )
 
     # Convert vote values to integers (handles NaN values properly)
     matrix = matrix.astype("Int64")
@@ -223,7 +225,7 @@ def make_raw_vote_matrix(deduped_votes: pd.DataFrame) -> pd.DataFrame:
 def make_participant_mask(matrix: pd.DataFrame, min_votes: int = 7) -> pd.Series:
     mask = matrix.count(axis="columns") >= min_votes
 
-    mask.index.name = "voter-id"
+    mask.index.name = "participant_id"
     mask.name = "participant-in"  # sample-in
     return mask
 
@@ -364,7 +366,7 @@ def create_participants_meta(
         DataFrame with columns: n-comments, n-votes, n-agree, n-disagree, n-pass
     """
     participants_meta = pd.DataFrame(index=raw_vote_matrix.index)
-    participants_meta.index.name = "voter-id"
+    participants_meta.index.name = "participant_id"
 
     # Count total votes (non-NaN values)
     participants_meta["n-votes"] = raw_vote_matrix.count(axis=1)
@@ -379,9 +381,9 @@ def create_participants_meta(
     participants_meta["n-pass"] = (raw_vote_matrix == 0.0).sum(axis=1)
 
     # Count comments authored by each participant
-    # raw_comments has 'author-id' column with voter-id
-    if "author-id" in raw_comments.columns:
-        comment_counts = raw_comments["author-id"].value_counts()
+    # raw_comments has participant_id
+    if "participant_id" in raw_comments.columns:
+        comment_counts = raw_comments["participant_id"].value_counts()
         participants_meta["n-comments"] = (
             participants_meta.index.to_series()
             .map(comment_counts)
@@ -389,7 +391,7 @@ def create_participants_meta(
             .astype(int)
         )
     else:
-        # If no author-id column, set to 0 for all participants
+        # If no participant_id column, set to 0 for all participants
         participants_meta["n-comments"] = 0
 
     # Reorder columns for better readability
@@ -492,8 +494,8 @@ def generate_polismath_json(
 
     # Remap columns into expected format and process.
     col_map = {
-        "comment-id": "statement_id",
-        "is-meta": "is_meta",
+        "statement_id": "statement_id",
+        "is_meta": "is_meta",
     }
     remapped_comments = (
         raw_comments.reset_index()

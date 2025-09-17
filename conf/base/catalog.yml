@@ -19,7 +19,7 @@ raw_comments:
   save_args:
     index: false
   load_args:
-    index_col: comment-id
+    index_col: statement_id
   metadata:
     index_in_preview: true
     kedro-viz:

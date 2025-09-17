@@ -52,21 +52,7 @@ class PolisAPIDataset(AbstractDataset):
         comments = pd.DataFrame(loader.comments_data)
         votes = pd.DataFrame(loader.votes_data)
 
-        # Rename columns to expected format (same as load_from_api)
-        votes = votes.rename(
-            columns={
-                "modified": "timestamp",
-                "participant_id": "voter-id",
-                "statement_id": "comment-id",
-            }
-        )
-
-        comments = comments.rename(
-            columns={
-                "statement_id": "comment-id",
-                "is_meta": "is-meta",
-            }
-        )
+        # No column renaming - use original column names
 
         return {"comments": comments, "votes": votes}
 
@@ -85,21 +71,7 @@ class PolisAPIDataset(AbstractDataset):
         comments = pd.DataFrame(loader.comments_data)
         votes = pd.DataFrame(loader.votes_data)
 
-        # Rename files to expected format
-        votes = votes.rename(
-            columns={
-                "modified": "timestamp",
-                "participant_id": "voter-id",
-                "statement_id": "comment-id",
-            }
-        )
-
-        comments = comments.rename(
-            columns={
-                "statement_id": "comment-id",
-                "is_meta": "is-meta",
-            }
-        )
+        # No column renaming - use original column names
 
         return {"comments": comments, "votes": votes}
 

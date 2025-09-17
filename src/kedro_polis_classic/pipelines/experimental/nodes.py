@@ -76,11 +76,11 @@ def split_raw_data(raw_data: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
 def dedup_votes(raw_votes: pd.DataFrame) -> pd.DataFrame:
     """Remove duplicate votes, keeping the most recent"""
     # Sort so newest votes are last
-    votes_sorted = raw_votes.sort_values("timestamp")
+    votes_sorted = raw_votes.sort_values("modified")
 
     # Drop duplicates, keeping the most recent
     deduped_votes = votes_sorted.drop_duplicates(
-        subset=["voter-id", "comment-id"], keep="last"
+        subset=["participant_id", "statement_id"], keep="last"
     )
 
     return deduped_votes
@@ -88,7 +88,9 @@ def dedup_votes(raw_votes: pd.DataFrame) -> pd.DataFrame:
 
 def make_raw_vote_matrix(deduped_votes: pd.DataFrame) -> pd.DataFrame:
     """Create vote matrix from deduplicated votes"""
-    matrix = deduped_votes.pivot(index="voter-id", columns="comment-id", values="vote")
+    matrix = deduped_votes.pivot(
+        index="participant_id", columns="statement_id", values="vote"
+    )
 
     # Convert vote values to integers (handles NaN values properly)
     matrix = matrix.astype("Int64")
@@ -144,7 +146,7 @@ def make_participant_mask(matrix: pd.DataFrame, min_votes: int = 7) -> pd.Series
     """Create a mask for participants who meet the minimum vote threshold"""
     mask = matrix.count(axis="columns") >= min_votes
 
-    mask.index.name = "voter-id"
+    mask.index.name = "participant_id"
     mask.name = "participant-in"
     return mask
 
@@ -167,7 +169,7 @@ def make_statement_mask(
     in_threshold = 1 if strict_moderation else 0
 
     if mask_out_is_meta:
-        mask = (comments["moderated"] >= in_threshold) & (comments["is-meta"] == False)
+        mask = (comments["moderated"] >= in_threshold) & (comments["is_meta"] == False)
     else:
         mask = comments["moderated"] >= in_threshold
 
@@ -625,7 +627,7 @@ def create_votes_dataframe(
     df = raw_vote_matrix.loc[included_participant_ids].copy()
 
     # Reset index and rename the index column to participant_id
-    # The index column name will be the original index name (e.g., "voter-id")
+    # The index column name will be the original index name (e.g., "participant_id")
     df = df.reset_index()
     index_col_name = df.columns[0]  # Get the actual name of the index column
     df = df.rename(columns={index_col_name: "participant_id"})
