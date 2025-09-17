@@ -6,6 +6,10 @@ from .nodes import (
     create_scatter_plot_by_participant_id,
     create_scatter_plot_by_vote_proportions,
     save_scatter_plot_image,
+    create_votes_dataframe,
+    save_projections_json,
+    save_statements_json,
+    save_meta_json,
 )
 from ..config import load_pipelines_config
 from ..preprocessing.pipeline import create_pipeline as create_preprocessing_pipeline
@@ -37,13 +41,13 @@ def _extract_input_parameters(params_dict: dict) -> list[str]:
 def create_pipeline(pipeline_key) -> Pipeline:
     """
     Create an experimental pipeline that includes preprocessing and experimental processing.
-    
+
     This pipeline combines the preprocessing pipeline (with namespace) and the experimental
     processing nodes into a single pipeline that can be run independently.
-    
+
     Args:
         pipeline_key: The key identifying which pipeline configuration to use
-        
+
     Returns:
         Pipeline: A Kedro pipeline containing both preprocessing and experimental nodes
     """
@@ -62,11 +66,11 @@ def create_pipeline(pipeline_key) -> Pipeline:
         },
         outputs={
             "masked_vote_matrix",  # Keep masked_vote_matrix output without namespace
-            "participant_mask",    # Keep participant_mask output without namespace
-            "statement_mask",      # Keep statement_mask output without namespace
-            "raw_vote_matrix",     # Keep raw_vote_matrix output without namespace
-            "raw_comments",        # Keep raw_comments output without namespace
-        }
+            "participant_mask",  # Keep participant_mask output without namespace
+            "statement_mask",  # Keep statement_mask output without namespace
+            "raw_vote_matrix",  # Keep raw_vote_matrix output without namespace
+            "raw_comments",  # Keep raw_comments output without namespace
+        },
     )
 
     nodes = []
@@ -170,6 +174,58 @@ def create_pipeline(pipeline_key) -> Pipeline:
             inputs=f"{pipeline_key}__scatter_plot_by_participant_id",
             outputs=f"{pipeline_key}__scatter_plot_by_participant_id_image_path",
             name="save_scatter_plot_by_participant_id_image",
+        )
+    )
+
+    # Add Red-Dwarf minimal dataset generation nodes
+    # These generate the votes.parquet, projections.json, statements.json, and meta.json files
+
+    # Generate votes dataframe for parquet storage
+    nodes.append(
+        node(
+            func=create_votes_dataframe,
+            inputs=[
+                "raw_vote_matrix",
+                "participant_mask",
+            ],
+            outputs=f"{pipeline_key}__votes_parquet",
+            name="create_votes_dataframe",
+        )
+    )
+
+    # Generate projections JSON
+    nodes.append(
+        node(
+            func=save_projections_json,
+            inputs=[
+                f"{pipeline_key}__filter_output",
+                "participant_mask",
+            ],
+            outputs=f"{pipeline_key}__projections_json",
+            name="save_projections_json",
+        )
+    )
+
+    # Generate statements JSON
+    nodes.append(
+        node(
+            func=save_statements_json,
+            inputs="raw_comments",
+            outputs=f"{pipeline_key}__statements_json",
+            name="save_statements_json",
+        )
+    )
+
+    # Generate metadata JSON
+    nodes.append(
+        node(
+            func=save_meta_json,
+            inputs=[
+                "params:polis_id",
+                f"params:pipelines.{pipeline_key}.reducer",
+            ],
+            outputs=f"{pipeline_key}__meta_json",
+            name="save_meta_json",
         )
     )
 

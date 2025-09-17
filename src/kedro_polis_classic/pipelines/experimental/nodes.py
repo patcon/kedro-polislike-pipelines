@@ -603,3 +603,127 @@ def save_scatter_plot_image(
 
     print(f"Scatter plot image saved to: {filepath}")
     return filepath
+
+
+@ensure_series("participant_mask")
+def create_votes_dataframe(
+    raw_vote_matrix: pd.DataFrame,
+    participant_mask: pd.Series,
+) -> pd.DataFrame:
+    """
+    Create votes dataframe in Red-Dwarf specification format for SQLite storage.
+
+    Args:
+        raw_vote_matrix: Raw vote matrix with participant_id as index and comment_id as columns
+        participant_mask: Boolean mask indicating which participants to include
+
+    Returns:
+        DataFrame with columns: participant_id, comment_id, vote
+    """
+    # Get the participant IDs that are included (where mask is True)
+    included_participant_ids = participant_mask.index[participant_mask].tolist()  # type: ignore
+    df = raw_vote_matrix.loc[included_participant_ids].copy()
+
+    # Reset index and rename the index column to participant_id
+    # The index column name will be the original index name (e.g., "voter-id")
+    df = df.reset_index()
+    index_col_name = df.columns[0]  # Get the actual name of the index column
+    df = df.rename(columns={index_col_name: "participant_id"})
+
+    # Melt to long format
+    long_df = df.melt(
+        id_vars="participant_id", var_name="comment_id", value_name="vote"
+    )
+    long_df = long_df.dropna(subset=["vote"]).astype(
+        {"participant_id": str, "comment_id": str, "vote": int}
+    )
+
+    print(f"Votes dataframe created with {len(long_df)} vote records")
+    return long_df
+
+
+@ensure_series("participant_mask")
+def save_projections_json(
+    filter_output,  # Filtered data from the experimental pipeline
+    participant_mask: pd.Series,
+) -> list:
+    """
+    Save dimensionality-reduced projections as JSON according to Red-Dwarf specification.
+    Returns data in format for Kedro JSON dataset.
+
+    Args:
+        filter_output: Numpy array or DataFrame with filtered components from the experimental pipeline
+        participant_mask: Boolean mask indicating which participants are included
+
+    Returns:
+        List in format [[participant_id, [x, y]], ...] for Kedro JSON dataset
+    """
+    import numpy as np
+
+    # Get the participant IDs that are included (where mask is True)
+    included_participant_ids = participant_mask.index[participant_mask].tolist()
+
+    # Convert numpy array to proper format if needed
+    if isinstance(filter_output, np.ndarray):
+        X_clustered = filter_output
+    else:
+        # If it's a DataFrame, get the values
+        X_clustered = filter_output.values
+
+    # Ensure we have 2D coordinates (take first 2 dimensions if more)
+    if X_clustered.shape[1] > 2:
+        X_clustered = X_clustered[:, :2]
+
+    # Create the format: [[participant_id, [x, y]], ...]
+    X_with_ids = []
+    for i, participant_id in enumerate(included_participant_ids):
+        coords = X_clustered[i].tolist()
+        X_with_ids.append([str(participant_id), coords])
+
+    print(f"Projections data prepared with {len(X_with_ids)} participants")
+    return X_with_ids
+
+
+def save_statements_json(raw_comments: pd.DataFrame) -> list:
+    """
+    Save statements (comments) as JSON - just dump the raw comments data.
+    Returns data in format for Kedro JSON dataset.
+
+    Args:
+        raw_comments: Raw comments DataFrame
+
+    Returns:
+        Dictionary representation of the raw comments DataFrame
+    """
+    # Convert DataFrame to dictionary format that preserves all original data
+    statements_dict = raw_comments.to_dict(orient="records")
+
+    print(f"Statements data prepared with {len(statements_dict)} comments")
+    return statements_dict
+
+
+def save_meta_json(
+    polis_id: str | None = None, reducer_params: dict | None = None
+) -> dict:
+    """
+    Save dataset metadata as JSON according to Red-Dwarf specification.
+    Returns data in format for Kedro JSON dataset.
+
+    Args:
+        polis_id: Polis conversation ID (optional)
+        reducer_params: Parameters for the reducer step to extract n_neighbors (optional)
+
+    Returns:
+        Dictionary with metadata for Kedro JSON dataset
+    """
+    # Create metadata
+    meta = {
+        "about_url": None,
+        "conversation_url": f"https://pol.is/{polis_id}" if polis_id else None,
+        "report_url": f"https://pol.is/report/{polis_id}" if polis_id else None,
+        "last_vote": None,  # Could be extracted from vote timestamps if needed
+        "n_neighbors": reducer_params.get("n_neighbors", 10) if reducer_params else 10,
+    }
+
+    print(f"Metadata prepared for polis_id: {polis_id}")
+    return meta

@@ -85,6 +85,35 @@
     kedro-viz:
       layer: reporting
 
+# Red-Dwarf minimal dataset outputs
+"{pipeline_name}__votes_parquet":
+  type: pandas.ParquetDataset
+  filepath: data/{pipeline_name}/03_primary/votes.parquet
+  metadata:
+    kedro-viz:
+      layer: primary
+
+"{pipeline_name}__projections_json":
+  type: json.JSONDataset
+  filepath: data/{pipeline_name}/03_primary/projections.json
+  metadata:
+    kedro-viz:
+      layer: primary
+
+"{pipeline_name}__statements_json":
+  type: json.JSONDataset
+  filepath: data/{pipeline_name}/03_primary/statements.json
+  metadata:
+    kedro-viz:
+      layer: primary
+
+"{pipeline_name}__meta_json":
+  type: json.JSONDataset
+  filepath: data/{pipeline_name}/03_primary/meta.json
+  metadata:
+    kedro-viz:
+      layer: primary
+
 # Legacy outputs for backward compatibility (can be removed if not needed)
 scaler_output:
   type: MemoryDataset
