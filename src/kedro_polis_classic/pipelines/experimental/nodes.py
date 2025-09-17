@@ -698,7 +698,10 @@ def save_statements_json(raw_comments: pd.DataFrame) -> list:
         Dictionary representation of the raw comments DataFrame
     """
     # Convert DataFrame to dictionary format that preserves all original data
-    statements_dict = raw_comments.to_dict(orient="records")
+    # Replace NaN values with None (which becomes null in JSON)
+    statements_dict = raw_comments.replace({pd.NA: None, float("nan"): None}).to_dict(
+        orient="records"
+    )
 
     print(f"Statements data prepared with {len(statements_dict)} comments")
     return statements_dict
