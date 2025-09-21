@@ -1,5 +1,5 @@
 strict_moderation: false
-polis_id: r2dfw8eambusb8buvecjt # small for tests
+polis_id: "${runtime_params:polis_id, r2dfw8eambusb8buvecjt}" # small for tests, can be overridden via CLI
 # polis_id: r2xcn2cdbmrzjmmuuytdk # American Assembly Bowling Green 2018
 # polis_id: r7cwmiaxczyj8te9rzdmx # DemDis EU isolation
 # min_votes_threshold: 7

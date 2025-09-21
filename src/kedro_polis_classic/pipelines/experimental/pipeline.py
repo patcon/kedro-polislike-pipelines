@@ -55,6 +55,10 @@ def create_pipeline(pipeline_key) -> Pipeline:
     pipelines_config = load_pipelines_config()
     pipeline_params = pipelines_config.get(pipeline_key, {})
 
+    # The polis_id will be resolved at runtime through Kedro's parameter system
+    # For now, we'll use a placeholder that will be resolved by the catalog templating
+    polis_id = "{polis_id}"
+
     # Create the preprocessing pipeline with namespace
     preprocessing_pipeline = Pipeline(
         create_preprocessing_pipeline(),
@@ -127,7 +131,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
                 "params:visualization.flip_x",
                 "params:visualization.flip_y",
             ],
-            outputs=f"{pipeline_key}__scatter_plot",
+            outputs=f"{polis_id}__{pipeline_key}__scatter_plot",
             name="create_scatter_plot",
         )
     )
@@ -142,7 +146,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
                 "params:visualization.flip_x",
                 "params:visualization.flip_y",
             ],
-            outputs=f"{pipeline_key}__scatter_plot_by_participant_id",
+            outputs=f"{polis_id}__{pipeline_key}__scatter_plot_by_participant_id",
             name="create_scatter_plot_by_participant_id",
         )
     )
@@ -161,8 +165,8 @@ def create_pipeline(pipeline_key) -> Pipeline:
     nodes.append(
         node(
             func=create_image_saver_wrapper(pipeline_key, "cluster"),
-            inputs=f"{pipeline_key}__scatter_plot",
-            outputs=f"{pipeline_key}__scatter_plot_image_path",
+            inputs=f"{polis_id}__{pipeline_key}__scatter_plot",
+            outputs=f"{polis_id}__{pipeline_key}__scatter_plot_image_path",
             name="save_scatter_plot_image",
         )
     )
@@ -171,8 +175,8 @@ def create_pipeline(pipeline_key) -> Pipeline:
     nodes.append(
         node(
             func=create_image_saver_wrapper(pipeline_key, "participant_id"),
-            inputs=f"{pipeline_key}__scatter_plot_by_participant_id",
-            outputs=f"{pipeline_key}__scatter_plot_by_participant_id_image_path",
+            inputs=f"{polis_id}__{pipeline_key}__scatter_plot_by_participant_id",
+            outputs=f"{polis_id}__{pipeline_key}__scatter_plot_by_participant_id_image_path",
             name="save_scatter_plot_by_participant_id_image",
         )
     )
@@ -188,7 +192,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
                 "raw_vote_matrix",
                 "participant_mask",
             ],
-            outputs=f"{pipeline_key}__votes_parquet",
+            outputs=f"{polis_id}__{pipeline_key}__votes_parquet",
             name="create_votes_dataframe",
         )
     )
@@ -201,7 +205,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
                 f"{pipeline_key}__filter_output",
                 "participant_mask",
             ],
-            outputs=f"{pipeline_key}__projections_json",
+            outputs=f"{polis_id}__{pipeline_key}__projections_json",
             name="save_projections_json",
         )
     )
@@ -211,7 +215,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
         node(
             func=save_statements_json,
             inputs="raw_comments",
-            outputs=f"{pipeline_key}__statements_json",
+            outputs=f"{polis_id}__{pipeline_key}__statements_json",
             name="save_statements_json",
         )
     )
@@ -224,7 +228,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
                 "params:polis_id",
                 f"params:pipelines.{pipeline_key}.reducer",
             ],
-            outputs=f"{pipeline_key}__meta_json",
+            outputs=f"{polis_id}__{pipeline_key}__meta_json",
             name="save_meta_json",
         )
     )
