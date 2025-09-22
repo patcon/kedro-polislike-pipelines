@@ -213,6 +213,7 @@ Examples:
     # Run pipelines
     successful_runs = 0
     failed_runs = 0
+    failed_pipelines = []
 
     total_pipelines = len(pipelines_to_run)
     for i, pipeline in enumerate(pipelines_to_run, 1):
@@ -221,6 +222,7 @@ Examples:
             successful_runs += 1
         else:
             failed_runs += 1
+            failed_pipelines.append(pipeline)
 
     # Summary
     print(f"\n{'=' * 60}")
@@ -229,6 +231,11 @@ Examples:
     print(f"✅ Successful: {successful_runs}")
     print(f"❌ Failed: {failed_runs}")
     print(f"📊 Total: {successful_runs + failed_runs}")
+
+    if failed_pipelines:
+        print(f"\n❌ Failed pipelines:")
+        for pipeline in failed_pipelines:
+            print(f"   • {pipeline}")
 
     # Launch viz if requested
     if args.launch_viz:
