@@ -36,7 +36,7 @@ jobs:
       - name: Run all pipelines
         # Run pipelines for: #ChileDespertó polis conversation (Chilean protest)
         # Polis report: https://pol.is/report/r29kkytnipymd3exbynkd
-        run: uv run python scripts/run_pipelines.py --all --params="report_id=r29kkytnipymd3exbynkd"
+        run: uv run python scripts/run_pipelines.py --all --params="polis_id=r29kkytnipymd3exbynkd"
 
       - name: Build Kedro-Viz site
         run: |
