@@ -1,6 +1,7 @@
 # Preprocessing parameters (from polis pipeline)
 min_votes_threshold: 7
 base_url: null # Default to null, which will use https://pol.is in PolisAPIDataset
+import_dir: null
 
 visualization:
   flip_x: false

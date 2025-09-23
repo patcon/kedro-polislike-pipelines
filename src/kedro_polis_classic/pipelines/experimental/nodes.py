@@ -62,9 +62,15 @@ def _process_input_parameters(config: dict, catalog_inputs: dict) -> dict:
 # Minimal data loader nodes from original polis pipeline
 
 
-def load_polis_data(polis_id: str, base_url: str | None = None):
-    """Load raw data from Polis API"""
-    dataset = PolisAPIDataset(polis_id=polis_id, base_url=base_url)
+def load_polis_data(
+    polis_id: str | None = None,
+    base_url: str | None = None,
+    import_dir: str | None = None,
+):
+    """Load raw data from Polis API or local directory"""
+    dataset = PolisAPIDataset(
+        polis_id=polis_id, base_url=base_url, import_dir=import_dir
+    )
     return dataset.load()
 
 

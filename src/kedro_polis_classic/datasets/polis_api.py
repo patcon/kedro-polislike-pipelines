@@ -108,7 +108,15 @@ class PolisAPIDataset(AbstractDataset):
         loader = Loader(filepaths=filepaths)
 
         # Set conversation_id from loaded conversation data
-        loader.conversation_id = loader.conversation_data["conversation_id"]
+        conversation_id = loader.conversation_data["conversation_id"]
+        loader.conversation_id = conversation_id
+
+        # Update our instance variables to make conversation_id available in catalog
+        self.conversation_id = conversation_id
+        self.polis_id = conversation_id
+
+        # Store the polis_id as an environment variable for potential use in catalog resolvers
+        os.environ["KEDRO_POLIS_ID"] = conversation_id
 
         # Convert the list data to DataFrames
         comments = pd.DataFrame(loader.comments_data)
