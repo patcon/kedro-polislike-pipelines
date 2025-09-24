@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DO_NOT_TRACK: true
+      KEDRO_POLIS_ID: r29kkytnipymd3exbynkd
     steps:
       - name: Fetch the repository
         uses: actions/checkout@v4
@@ -33,10 +34,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
+      - name: Update parameters with KEDRO_POLIS_ID
+        run: |
+          sed -i 's/polis_id: "${runtime_params:polis_id, null}"/polis_id: "${runtime_params:polis_id, '"$KEDRO_POLIS_ID"'}"/' conf/base/parameters.yml
+
       - name: Run all pipelines
         # Run pipelines for: #ChileDespertó polis conversation (Chilean protest)
         # Polis report: https://pol.is/report/r29kkytnipymd3exbynkd
-        run: uv run python scripts/run_pipelines.py --all --params="polis_id=r29kkytnipymd3exbynkd"
+        run: uv run python scripts/run_pipelines.py --all --params="polis_id=$KEDRO_POLIS_ID"
 
       - name: Build Kedro-Viz site
         run: |
