@@ -279,7 +279,7 @@ def _create_scatter_plot(
     color_discrete_scale = px.colors.qualitative.Set1
 
     # Add participant labels for hover
-    plot_data["Participant"] = [f"Participant {idx}" for idx in range(len(plot_data))]
+    plot_data["Participant"] = [f"Participant {idx}" for idx in plot_data.index]
 
     # Check for 2D or 3D plot based on column count
     if len(data.columns) == 3:
