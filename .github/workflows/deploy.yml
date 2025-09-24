@@ -40,7 +40,7 @@ jobs:
 
       - name: Build Kedro-Viz site
         run: |
-          uv run kedro viz build --include-previews --params="polis_id=r29kkytnipymd3exbynkd"
+          uv run kedro viz build --include-previews
 
       - name: Upload static files as artifact
         uses: actions/upload-pages-artifact@v3
