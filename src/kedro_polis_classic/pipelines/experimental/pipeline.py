@@ -124,6 +124,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
             inputs=[
                 f"{pipeline_key}__filter_output",
                 f"{pipeline_key}__clusterer_output",
+                "participant_mask",
                 "params:visualization.flip_x",
                 "params:visualization.flip_y",
             ],

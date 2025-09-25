@@ -373,9 +373,11 @@ def _create_scatter_plot(
     return fig
 
 
+@ensure_series("participant_mask")
 def create_scatter_plot(
     filter_output,  # Can be numpy array or DataFrame - filtered data from SampleMaskFilter
     clusterer_output,  # Cluster labels
+    participant_mask: pd.Series,  # Mask indicating which participants are included
     flip_x: bool = False,
     flip_y: bool = False,
 ) -> go.Figure:
@@ -387,6 +389,7 @@ def create_scatter_plot(
     Args:
         filter_output: Numpy array or DataFrame with filtered components from the experimental pipeline
         clusterer_output: Cluster labels for coloring the points
+        participant_mask: Boolean mask indicating which participants are included in the filtered data
         flip_x: If True, flip the x-axis by multiplying by -1
         flip_y: If True, flip the y-axis by multiplying by -1
 
@@ -394,6 +397,9 @@ def create_scatter_plot(
         Plotly figure showing the scatter plot
     """
     import numpy as np
+
+    # Get the participant IDs that are included (where mask is True)
+    included_participant_ids = participant_mask.index[participant_mask]
 
     # Convert numpy array to DataFrame if needed
     if isinstance(filter_output, np.ndarray):
@@ -404,21 +410,23 @@ def create_scatter_plot(
         else:
             column_names = [f"PC{i + 1}" for i in range(n_components)]
 
-        # Create DataFrame with generic participant IDs
+        # Create DataFrame with actual participant IDs as index
         data = pd.DataFrame(
             filter_output,
-            index=range(len(filter_output)),
+            index=included_participant_ids,  # type: ignore
             columns=pd.Index(column_names),
         )
     else:
-        # Already a DataFrame
-        data = filter_output
+        # Already a DataFrame, but ensure it has the correct index
+        data = filter_output.copy()
+        data.index = included_participant_ids
 
     # Convert cluster labels to pandas Series of strings for categorical coloring
+    # Make sure the cluster labels have the same index as the data DataFrame
     if isinstance(clusterer_output, np.ndarray):
-        cluster_labels = pd.Series(clusterer_output.flatten())
+        cluster_labels = pd.Series(clusterer_output.flatten(), index=data.index)
     else:
-        cluster_labels = pd.Series(clusterer_output)
+        cluster_labels = pd.Series(clusterer_output, index=data.index)
 
     # Sort unique cluster labels numerically to ensure proper legend ordering
     unique_labels = sorted(cluster_labels.unique())
@@ -629,7 +637,7 @@ def create_votes_dataframe(
         DataFrame with columns: participant_id, comment_id, vote
     """
     # Get the participant IDs that are included (where mask is True)
-    included_participant_ids = participant_mask.index[participant_mask].tolist()  # type: ignore
+    included_participant_ids = participant_mask.index[participant_mask]
     df = raw_vote_matrix.loc[included_participant_ids].copy()
 
     # Reset index and rename the index column to participant_id
@@ -669,7 +677,7 @@ def save_projections_json(
     import numpy as np
 
     # Get the participant IDs that are included (where mask is True)
-    included_participant_ids = participant_mask.index[participant_mask].tolist()
+    included_participant_ids = list(participant_mask.index[participant_mask])  # type: ignore
 
     # Convert numpy array to proper format if needed
     if isinstance(filter_output, np.ndarray):
