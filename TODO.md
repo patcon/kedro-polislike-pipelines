@@ -7,3 +7,4 @@
 - [ ] fix `mean_pacmap_besthdbscanflat`
 - [ ] fix `mean_localmap_besthdbscanflat_eom`
 - [ ] fix `mean_localmap_besthdbscanflat_leaf`
+- [ ] get `polis_id` parameter showing in deployed github pages website (currently missing)
