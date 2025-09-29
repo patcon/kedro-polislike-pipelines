@@ -29,6 +29,8 @@ build: ## Build static site in build directory
 	@echo "🏗️  Building static site..."
 	@mkdir -p build
 	python scripts/copy_data.py
+	@echo "🔧 Fixing API file paths..."
+	python scripts/fix_api_paths.py
 	@echo "✅ Build completed! Static site ready in build/ directory"
 
 serve: ## Serve the build directory with Python HTTP server
