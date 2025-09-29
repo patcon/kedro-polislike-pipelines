@@ -22,7 +22,4 @@ def register_pipelines() -> dict[str, Pipeline]:
     for name in experimental_pipeline_names:
         pipelines[name] = experiment_pipeline.create_pipeline(name)
 
-    # Add legacy pipelines to end of list.
-    pipelines["polis_legacy"] = polis_pipeline.create_pipeline()
-
     return pipelines
