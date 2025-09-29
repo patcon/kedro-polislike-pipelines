@@ -37,18 +37,18 @@ jobs:
       - name: Run all pipelines
         # Run pipelines for: #ChileDespertó polis conversation (Chilean protest)
         # Polis report: https://pol.is/report/r29kkytnipymd3exbynkd
-        run: uv run python scripts/run_pipelines.py --all --params="polis_id=$KEDRO_POLIS_ID"
+        run: uv run make run-pipelines PARAMS="polis_id=$KEDRO_POLIS_ID"
 
-      - name: Move polis data up one level
+      - name: Copy polis data up one level
         run: |
           if [ -d "data/$KEDRO_POLIS_ID" ]; then
-            mv data/$KEDRO_POLIS_ID/* data/ 2>/dev/null || true
-            rmdir data/$KEDRO_POLIS_ID 2>/dev/null || true
+            cp -r data/$KEDRO_POLIS_ID/* data/ 2>/dev/null || true
           fi
 
-      - name: Build Kedro-Viz site
+      - name: Build static site
         run: |
           uv run kedro viz build --include-previews
+          uv run make build
 
       - name: Upload static files as artifact
         uses: actions/upload-pages-artifact@v3
