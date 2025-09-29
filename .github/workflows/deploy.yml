@@ -47,8 +47,9 @@ jobs:
 
       - name: Build static site
         run: |
-          uv run kedro viz build --include-previews
           uv run make build
+        env:
+          POLIS_ID: ${{ env.KEDRO_POLIS_ID }}
 
       - name: Upload static files as artifact
         uses: actions/upload-pages-artifact@v3
