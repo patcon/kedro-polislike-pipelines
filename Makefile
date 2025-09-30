@@ -50,12 +50,6 @@ reset-tmp-build-config: ## Reset temporary build config to null in base globals
 	@rm -f conf/base/globals.yml.bak
 	@echo "✅ Temporary build configuration reset to null in conf/base/globals.yml"
 
-# Legacy targets for backward compatibility
-set-build-polis-id: set-tmp-build-config ## Legacy alias for set-tmp-build-config
-reset-build-polis-id: reset-tmp-build-config ## Legacy alias for reset-tmp-build-config
-set-build-polis-url: set-tmp-build-config ## Legacy alias for set-tmp-build-config
-reset-build-polis-url: reset-tmp-build-config ## Legacy alias for reset-tmp-build-config
-
 build: ## Build static site in build directory (requires POLIS_ID or POLIS_URL env var)
 	@echo "🏗️  Building static site..."
 	@mkdir -p build
@@ -76,6 +70,12 @@ serve: ## Serve the build directory with Python HTTP server (with CORS headers)
 		exit 1; \
 	fi
 	python scripts/serve_with_cors.py
+
+# Legacy targets for backward compatibility
+set-build-polis-id: set-tmp-build-config # Legacy alias for set-tmp-build-config
+reset-build-polis-id: reset-tmp-build-config # Legacy alias for reset-tmp-build-config
+set-build-polis-url: set-tmp-build-config # Legacy alias for set-tmp-build-config
+reset-build-polis-url: reset-tmp-build-config # Legacy alias for reset-tmp-build-config
 
 .PHONY: help build run-pipelines dev serve
 

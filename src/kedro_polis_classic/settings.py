@@ -25,12 +25,54 @@ https://docs.kedro.org/en/stable/kedro_project_setup/settings.html."""
 
 # Class that manages how configuration is loaded.
 from kedro.config import OmegaConfigLoader  # noqa: E402
+from urllib.parse import urlparse
+
+
+def extract_polis_id_from_url(
+    polis_url: str, fallback: str | None = None
+) -> str | None:
+    """
+    Extract polis_id from a polis_url for use in file paths.
+
+    Args:
+        polis_url: URL in format "https://polis.example.com/{polis_convo_id}"
+                  or "https://polis.example.com/report/{polis_report_id}"
+        fallback: Fallback value if URL extraction fails
+
+    Returns:
+        The polis_id extracted from the URL, fallback value, or None if both fail
+    """
+    if not polis_url:
+        return fallback
+
+    parsed = urlparse(polis_url)
+    # Remove leading/trailing slashes and split path
+    path_parts = parsed.path.strip("/").split("/")
+
+    if not path_parts or not path_parts[-1]:
+        return fallback
+
+    # Check if it's a report URL
+    if len(path_parts) >= 2 and path_parts[-2] == "report":
+        polis_id = path_parts[-1]
+        # Ensure report IDs start with 'r'
+        if not polis_id.startswith("r"):
+            polis_id = f"r{polis_id}"
+    else:
+        # Direct conversation URL
+        polis_id = path_parts[-1]
+
+    return polis_id
+
 
 CONFIG_LOADER_CLASS = OmegaConfigLoader
 # Keyword arguments to pass to the `CONFIG_LOADER_CLASS` constructor.
 CONFIG_LOADER_ARGS = {
     "base_env": "base",
     "default_run_env": "local",
+    "custom_resolvers": {
+        "extract_polis_id": extract_polis_id_from_url,
+    },
     #       "config_patterns": {
     #           "spark" : ["spark*/"],
     #           "parameters": ["parameters*", "parameters*/**", "**/parameters*"],

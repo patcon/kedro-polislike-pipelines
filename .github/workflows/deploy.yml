@@ -37,10 +37,7 @@ jobs:
       - name: Run all pipelines
         # Run pipelines for: #ChileDespertó polis conversation (Chilean protest)
         # Polis report: https://pol.is/report/r29kkytnipymd3exbynkd
-        run: |
-          # Extract polis_id from the URL for file paths
-          POLIS_ID=$(basename "$KEDRO_POLIS_URL")
-          uv run make run-pipelines PARAMS="polis_url=$KEDRO_POLIS_URL,polis_id=$POLIS_ID"
+        run: uv run make run-pipelines PARAMS="polis_url=$KEDRO_POLIS_URL"
 
       - name: Build static site
         run: |

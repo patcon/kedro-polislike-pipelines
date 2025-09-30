@@ -63,14 +63,13 @@ def _process_input_parameters(config: dict, catalog_inputs: dict) -> dict:
 
 
 def load_polis_data(
-    polis_id: str | None = None,
     base_url: str | None = None,
     polis_url: str | None = None,
     import_dir: str | None = None,
 ):
     """Load raw data from Polis API or local directory"""
     dataset = PolisAPIDataset(
-        polis_id=polis_id, base_url=base_url, polis_url=polis_url, import_dir=import_dir
+        base_url=base_url, polis_url=polis_url, import_dir=import_dir
     )
     return dataset.load()
 
@@ -725,19 +724,29 @@ def save_statements_json(raw_comments: pd.DataFrame) -> list:
 
 
 def save_meta_json(
-    polis_id: str | None = None, reducer_params: dict | None = None
+    polis_url: str | None = None, reducer_params: dict | None = None
 ) -> dict:
     """
     Save dataset metadata as JSON according to Red-Dwarf specification.
     Returns data in format for Kedro JSON dataset.
 
     Args:
-        polis_id: Polis conversation ID (optional)
+        polis_url: Polis URL (optional)
         reducer_params: Parameters for the reducer step to extract n_neighbors (optional)
 
     Returns:
         Dictionary with metadata for Kedro JSON dataset
     """
+    # Extract polis_id from URL if provided
+    polis_id = None
+    if polis_url:
+        from kedro_polis_classic.datasets.polis_api import _parse_polis_url
+
+        try:
+            _, polis_id = _parse_polis_url(polis_url)
+        except ValueError:
+            polis_id = None
+
     # Create metadata
     meta = {
         "about_url": None,
@@ -747,5 +756,7 @@ def save_meta_json(
         "n_neighbors": reducer_params.get("n_neighbors", 10) if reducer_params else 10,
     }
 
-    print(f"Metadata prepared for polis_id: {polis_id}")
+    print(
+        f"Metadata prepared for polis_url: {polis_url}, extracted polis_id: {polis_id}"
+    )
     return meta

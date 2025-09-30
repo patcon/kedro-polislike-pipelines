@@ -61,7 +61,9 @@ def create_pipeline(pipeline_key) -> Pipeline:
         namespace="preprocessing",
         prefix_datasets_with_namespace=False,
         parameters={
-            "params:polis_id",  # Keep polis_id parameter without namespace
+            "params:polis_url",  # Keep polis_url parameter without namespace
+            "params:base_url",  # Keep base_url parameter without namespace
+            "params:import_dir",  # Keep import_dir parameter without namespace
             "params:min_votes_threshold",  # Keep min_votes_threshold parameter without namespace
         },
         outputs={
@@ -222,7 +224,7 @@ def create_pipeline(pipeline_key) -> Pipeline:
         node(
             func=save_meta_json,
             inputs=[
-                "params:polis_id",
+                "params:polis_url",
                 f"params:pipelines.{pipeline_key}.reducer",
             ],
             outputs=f"{pipeline_key}__meta_json",
