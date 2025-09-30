@@ -25,7 +25,12 @@ def create_pipeline() -> Pipeline:
         # Data loading nodes
         node(
             func=load_polis_data,
-            inputs=["params:polis_id", "params:base_url", "params:import_dir"],
+            inputs=[
+                "params:polis_id",
+                "params:base_url",
+                "params:polis_url",
+                "params:import_dir",
+            ],
             outputs="raw_data",
             name="load_polis_data",
         ),

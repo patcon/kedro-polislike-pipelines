@@ -1,2 +1,3 @@
 random_state: 42
 build_polis_id: null # Must be set for builds, e.g. --globals build_polis_id=6carwc4nzj
+build_polis_url: null # Alternative to build_polis_id, e.g. --globals build_polis_url=https://polis.example.com/6carwc4nzj

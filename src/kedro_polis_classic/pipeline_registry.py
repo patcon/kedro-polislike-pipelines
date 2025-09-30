@@ -1,5 +1,4 @@
 from kedro.pipeline import Pipeline
-from .pipelines.polis import pipeline as polis_pipeline
 from .pipelines.experimental import pipeline as experiment_pipeline
 from .pipelines.config import load_pipelines_config
 

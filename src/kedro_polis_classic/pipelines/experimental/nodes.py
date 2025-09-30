@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
-from ..polis.utils import ensure_series
+from ..polis_legacy.utils import ensure_series
 
 
 def run_component_node(X, params, step_name, **catalog_inputs):
@@ -65,11 +65,12 @@ def _process_input_parameters(config: dict, catalog_inputs: dict) -> dict:
 def load_polis_data(
     polis_id: str | None = None,
     base_url: str | None = None,
+    polis_url: str | None = None,
     import_dir: str | None = None,
 ):
     """Load raw data from Polis API or local directory"""
     dataset = PolisAPIDataset(
-        polis_id=polis_id, base_url=base_url, import_dir=import_dir
+        polis_id=polis_id, base_url=base_url, polis_url=polis_url, import_dir=import_dir
     )
     return dataset.load()
 

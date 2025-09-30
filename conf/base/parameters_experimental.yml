@@ -1,6 +1,7 @@
 # Preprocessing parameters (from polis pipeline)
 min_votes_threshold: 7
 base_url: null # Default to null, which will use https://pol.is in PolisAPIDataset
+polis_url: null # Alternative to polis_id + base_url, e.g. "https://polis.example.com/{polis_id}" or "https://polis.example.com/report/{polis_id}"
 import_dir: null
 
 visualization:
