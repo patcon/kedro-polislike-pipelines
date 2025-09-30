@@ -1,9 +1,6 @@
-strict_moderation: false
-polis_id: "${runtime_params:polis_id, ${globals:build_polis_id}}" # small for tests, can be overridden via CLI
-polis_url: "${runtime_params:polis_url, ${globals:build_polis_url}}" # Alternative to polis_id + base_url, e.g. "https://polis.example.com/{polis_id}"
+# Legacy parameters for deprecated polis pipeline
 # polis_id: r2xcn2cdbmrzjmmuuytdk # American Assembly Bowling Green 2018
 # polis_id: r7cwmiaxczyj8te9rzdmx # DemDis EU isolation
-# min_votes_threshold: 7
 
 # PCA Subpipeline Parameters
 pca:

@@ -1,7 +1,9 @@
-# Preprocessing parameters (from polis pipeline)
+# Preprocessing parameters for experimental pipeline
+strict_moderation: false
+polis_id: "${runtime_params:polis_id, ${globals:build_polis_id}}" # small for tests, can be overridden via CLI
+polis_url: "${runtime_params:polis_url, ${globals:build_polis_url}}" # Alternative to polis_id + base_url, e.g. "https://polis.example.com/{polis_id}" or "https://polis.example.com/report/{polis_id}"
 min_votes_threshold: 7
 base_url: null # Default to null, which will use https://pol.is in PolisAPIDataset
-polis_url: null # Alternative to polis_id + base_url, e.g. "https://polis.example.com/{polis_id}" or "https://polis.example.com/report/{polis_id}"
 import_dir: null
 
 visualization:

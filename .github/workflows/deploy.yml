@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DO_NOT_TRACK: true
-      KEDRO_POLIS_ID: r29kkytnipymd3exbynkd
+      KEDRO_POLIS_URL: https://pol.is/report/r29kkytnipymd3exbynkd
     steps:
       - name: Fetch the repository
         uses: actions/checkout@v4
@@ -37,19 +37,13 @@ jobs:
       - name: Run all pipelines
         # Run pipelines for: #ChileDespertó polis conversation (Chilean protest)
         # Polis report: https://pol.is/report/r29kkytnipymd3exbynkd
-        run: uv run make run-pipelines PARAMS="polis_id=$KEDRO_POLIS_ID"
-
-      - name: Copy polis data up one level
-        run: |
-          if [ -d "data/$KEDRO_POLIS_ID" ]; then
-            cp -r data/$KEDRO_POLIS_ID/* data/ 2>/dev/null || true
-          fi
+        run: uv run make run-pipelines PARAMS="polis_url=$KEDRO_POLIS_URL"
 
       - name: Build static site
         run: |
           uv run make build
         env:
-          POLIS_ID: ${{ env.KEDRO_POLIS_ID }}
+          POLIS_URL: ${{ env.KEDRO_POLIS_URL }}
 
       - name: Upload static files as artifact
         uses: actions/upload-pages-artifact@v3
