@@ -1,0 +1,247 @@
+import pandas as pd
+import json
+import random
+from shapely.geometry import Point, Polygon, MultiPolygon
+from typing import Dict, List, Any
+import plotly.graph_objects as go
+
+
+def filter_votes_for_islands(votes: pd.DataFrame) -> pd.DataFrame:
+    """
+    Filter votes to only include island-related statements with vote==1.
+
+    Args:
+        votes: Raw votes DataFrame
+
+    Returns:
+        Filtered votes DataFrame
+    """
+    # Map statement IDs to islands
+    statement_to_island = {
+        64: "Orcas Island",
+        65: "Lopez Island",
+        66: "San Juan Island",
+        67: "Shaw Island",
+    }
+    island_statements = list(statement_to_island.keys())
+
+    # Filter votes to relevant statements and vote==1
+    filtered_votes = votes[votes["vote"] == 1].copy()
+    filtered_votes = filtered_votes[
+        filtered_votes["statement_id"].isin(island_statements)
+    ]
+
+    return filtered_votes
+
+
+def aggregate_participant_islands(filtered_votes: pd.DataFrame) -> Dict[int, List[str]]:
+    """
+    Aggregate participants to their preferred islands.
+
+    Args:
+        filtered_votes: Filtered votes DataFrame
+
+    Returns:
+        Dictionary mapping participant_id to list of island names
+    """
+    statement_to_island = {
+        64: "Orcas Island",
+        65: "Lopez Island",
+        66: "San Juan Island",
+        67: "Shaw Island",
+    }
+
+    participant_islands = (
+        filtered_votes.groupby("participant_id")["statement_id"]
+        .apply(lambda x: [statement_to_island[i] for i in x])
+        .to_dict()
+    )
+
+    return participant_islands
+
+
+def load_island_geojson(geojson_path: str) -> Dict[str, Any]:
+    """
+    Load island GeoJSON data from file.
+
+    Args:
+        geojson_path: Path to the GeoJSON file
+
+    Returns:
+        GeoJSON data as dictionary
+    """
+    with open(geojson_path, "r") as f:
+        islands_geojson = json.load(f)
+
+    return islands_geojson
+
+
+def create_island_shapes(islands_geojson: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Map island names to shapely polygon objects.
+
+    Args:
+        islands_geojson: GeoJSON data
+
+    Returns:
+        Dictionary mapping island names to shapely polygons
+    """
+    island_shapes = {}
+
+    for feature in islands_geojson["features"]:
+        name = feature["properties"].get("name")
+        geom = feature["geometry"]
+
+        if geom["type"] == "Polygon":
+            island_shapes[name] = Polygon(geom["coordinates"][0])
+        elif geom["type"] == "MultiPolygon":
+            island_shapes[name] = MultiPolygon(
+                [Polygon(p[0]) for p in geom["coordinates"]]
+            )
+
+    return island_shapes
+
+
+def random_point_in_polygon(polygon: Polygon) -> List[float]:
+    """
+    Generate a random point within a polygon.
+
+    Args:
+        polygon: Shapely polygon object
+
+    Returns:
+        List containing [x, y] coordinates
+    """
+    minx, miny, maxx, maxy = polygon.bounds
+
+    while True:
+        p = Point(random.uniform(minx, maxx), random.uniform(miny, maxy))
+        if polygon.contains(p):
+            # Optional: tiny jitter to make it clear data is synthetic
+            return [p.x, p.y]
+
+
+def assign_participant_coordinates(
+    participant_islands: Dict[int, List[str]], island_shapes: Dict[str, Any]
+) -> List[Dict[str, Any]]:
+    """
+    Assign random coordinates to participants based on their island preferences.
+
+    Args:
+        participant_islands: Dictionary mapping participant_id to list of island names
+        island_shapes: Dictionary mapping island names to shapely polygons
+
+    Returns:
+        List of GeoJSON features for participants
+    """
+    participant_features = []
+
+    for pid, islands in participant_islands.items():
+        # Pick first island if multiple votes
+        island_name = islands[0]
+        poly = island_shapes.get(island_name)
+
+        if poly:
+            coords = random_point_in_polygon(poly)
+            feature = {
+                "type": "Feature",
+                "properties": {"participant_id": pid, "island": island_name},
+                "geometry": {"type": "Point", "coordinates": coords},
+            }
+            participant_features.append(feature)
+
+    return participant_features
+
+
+def create_participant_geojson(
+    participant_features: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    Create GeoJSON FeatureCollection from participant features.
+
+    Args:
+        participant_features: List of GeoJSON features
+
+    Returns:
+        GeoJSON FeatureCollection
+    """
+    participant_geojson = {
+        "type": "FeatureCollection",
+        "features": participant_features,
+    }
+
+    print(f"Generated {len(participant_features)} participant points.")
+    return participant_geojson
+
+
+def save_participant_geojson(
+    participant_geojson: Dict[str, Any], output_path: str
+) -> str:
+    """
+    Save participant GeoJSON to file.
+
+    Args:
+        participant_geojson: GeoJSON FeatureCollection
+        output_path: Path where to save the file
+
+    Returns:
+        Path where the file was saved
+    """
+    with open(output_path, "w") as f:
+        json.dump(participant_geojson, f, indent=2)
+
+    print(f"Participant GeoJSON saved to: {output_path}")
+    return output_path
+
+
+def create_geographic_scatter_plot(participant_geojson: Dict[str, Any]) -> go.Figure:
+    """
+    Create a plotly scatter plot from geographic coordinates using the existing scatter plot helper.
+
+    Args:
+        participant_geojson: GeoJSON FeatureCollection with participant points
+
+    Returns:
+        Plotly figure showing participants on a geographic scatter plot
+    """
+    # Import the existing scatter plot helper from experimental nodes
+    from ..experimental.nodes import _create_scatter_plot
+
+    # Extract coordinates and metadata from GeoJSON
+    coords_data = []
+    participant_ids = []
+    islands = []
+
+    for feature in participant_geojson["features"]:
+        coords = feature["geometry"]["coordinates"]
+        coords_data.append([coords[0], coords[1]])  # [longitude, latitude]
+        participant_ids.append(feature["properties"]["participant_id"])
+        islands.append(feature["properties"]["island"])
+
+    # Create DataFrame with geographic coordinates
+    import pandas as pd
+
+    data = pd.DataFrame(coords_data, columns=["longitude", "latitude"])
+    data.index = participant_ids
+
+    # Convert islands to pandas Series for color values
+    island_labels = pd.Series(islands, index=participant_ids)
+
+    # Sort unique island labels for consistent coloring
+    unique_islands = sorted(island_labels.unique())
+    category_orders = {"Island": unique_islands}
+
+    # Use the existing scatter plot helper
+    scatter_plot = _create_scatter_plot(
+        data=data,
+        flip_x=False,
+        flip_y=False,
+        colorbar_title="Island",
+        color_values=island_labels,
+        title="Geographic Projection: Participant Locations by Island Preference",
+        use_categorical_colors=True,
+        category_orders=category_orders,
+    )
+
+    print(f"Created geographic scatter plot with {len(coords_data)} participant points")
+    return scatter_plot

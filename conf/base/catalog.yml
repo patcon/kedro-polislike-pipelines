@@ -155,4 +155,55 @@ labels_dataframe:
       layer: primary
       preview_args:
         nrows: 10
+
+# Geographic pipeline datasets
+filtered_island_votes:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: intermediate
+
+participant_islands:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: intermediate
+
+islands_geojson:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: raw
+
+island_shapes:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: intermediate
+
+participant_features:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+participant_geojson:
+  type: json.JSONDataset
+  filepath: data/08_reporting/participants_points.geojson
+  metadata:
+    kedro-viz:
+      layer: reporting
+participant_geojson_path:
+  type: text.TextDataset
+  filepath: data/08_reporting/participant_geojson_path.txt
+  metadata:
+    kedro-viz:
+      layer: reporting
+
+geographic_scatter_plot:
+  type: plotly.JSONDataset
+  filepath: data/08_reporting/geographic_scatter_plot.json
+  metadata:
+    kedro-viz:
+      layer: reporting
 # Note: Experimental pipeline catalog entries have been moved to catalog_experimental.yml

@@ -7,3 +7,8 @@ pca:
   n_components: 2
   flip_x: true
   flip_y: false
+
+# Geographic projection parameters
+geographic:
+  geojson_path: "data/r7bhuide6netnbr8fxbyh/01_raw/san-juan-islands.minimal.geojson"
+  output_path: "data/08_reporting/participants_points.geojson"

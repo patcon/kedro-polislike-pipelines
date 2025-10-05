@@ -15,6 +15,7 @@ dependencies = [
     "hdbscan>=0.8.40",
     "kaleido>=1.0.0",
     "umap-learn>=0.5.9.post2",
+    "shapely>=2.1.2",
 ]
 
 [build-system]

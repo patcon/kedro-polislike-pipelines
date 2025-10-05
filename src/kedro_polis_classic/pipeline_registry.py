@@ -1,5 +1,6 @@
 from kedro.pipeline import Pipeline
 from .pipelines.experimental import pipeline as experiment_pipeline
+from .pipelines.geographic import pipeline as geographic_pipeline
 from .pipelines.config import load_pipelines_config
 
 
@@ -15,6 +16,9 @@ def register_pipelines() -> dict[str, Pipeline]:
     pipelines["polis_classic"] = experiment_pipeline.create_pipeline(
         "mean_pca_bestkmeans"
     )
+
+    # Add geographic projection pipeline
+    pipelines["geographic"] = geographic_pipeline.create_pipeline()
 
     # Add experimental pipelines using iteration
     # Each pipeline now includes preprocessing with namespace
