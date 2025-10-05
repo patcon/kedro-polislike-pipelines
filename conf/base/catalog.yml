@@ -200,7 +200,7 @@ participant_geojson_path:
     kedro-viz:
       layer: reporting
 
-geographic_scatter_plot:
+geographic__scatter_plot:
   type: plotly.JSONDataset
   filepath: data/08_reporting/geographic_scatter_plot.json
   metadata:

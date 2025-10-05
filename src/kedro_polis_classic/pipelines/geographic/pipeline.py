@@ -91,8 +91,8 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
                 func=create_geographic_scatter_plot,
                 inputs="participant_geojson",
-                outputs="geographic_scatter_plot",
-                name="create_geographic_scatter_plot",
+                outputs="geographic__scatter_plot",
+                name="create_scatter_plot",
             ),
         ]
     )
