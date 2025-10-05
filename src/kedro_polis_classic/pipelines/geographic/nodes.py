@@ -4,6 +4,7 @@ import random
 from shapely.geometry import Point, Polygon, MultiPolygon
 from typing import Dict, List, Any
 import plotly.graph_objects as go
+from ..polis_legacy.utils import ensure_series
 
 
 def filter_votes_for_islands(votes: pd.DataFrame) -> pd.DataFrame:
@@ -34,15 +35,16 @@ def filter_votes_for_islands(votes: pd.DataFrame) -> pd.DataFrame:
     return filtered_votes
 
 
+@ensure_series("participant_mask")
 def aggregate_participant_islands(
-    filtered_votes: pd.DataFrame, all_participants: pd.Series
+    filtered_votes: pd.DataFrame, participant_mask: pd.Series
 ) -> Dict[int, List[str]]:
     """
     Aggregate participants to their preferred islands, including those with no island votes.
 
     Args:
         filtered_votes: Filtered votes DataFrame
-        all_participants: Series of all participant IDs (from participant_mask)
+        participant_mask: Boolean mask indicating which participants are included
 
     Returns:
         Dictionary mapping participant_id to list of island names (or ["Other"] for no votes)
@@ -62,8 +64,9 @@ def aggregate_participant_islands(
     )
 
     # Add participants who didn't vote for any islands to "Other"
-    all_participant_ids = all_participants[all_participants].index.tolist()
-    for pid in all_participant_ids:
+    # Only include participants who are in the participant_mask (meet minimum vote threshold)
+    included_participant_ids = participant_mask.index[participant_mask].tolist()
+    for pid in included_participant_ids:
         if pid not in participant_islands:
             participant_islands[pid] = ["Other"]
 
