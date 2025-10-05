@@ -54,7 +54,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             ),
             node(
                 func=aggregate_participant_islands,
-                inputs="filtered_island_votes",
+                inputs=["filtered_island_votes", "participant_mask"],
                 outputs="participant_islands",
                 name="aggregate_participant_islands",
             ),

@@ -34,15 +34,18 @@ def filter_votes_for_islands(votes: pd.DataFrame) -> pd.DataFrame:
     return filtered_votes
 
 
-def aggregate_participant_islands(filtered_votes: pd.DataFrame) -> Dict[int, List[str]]:
+def aggregate_participant_islands(
+    filtered_votes: pd.DataFrame, all_participants: pd.Series
+) -> Dict[int, List[str]]:
     """
-    Aggregate participants to their preferred islands.
+    Aggregate participants to their preferred islands, including those with no island votes.
 
     Args:
         filtered_votes: Filtered votes DataFrame
+        all_participants: Series of all participant IDs (from participant_mask)
 
     Returns:
-        Dictionary mapping participant_id to list of island names
+        Dictionary mapping participant_id to list of island names (or ["Other"] for no votes)
     """
     statement_to_island = {
         64: "Orcas Island",
@@ -51,11 +54,18 @@ def aggregate_participant_islands(filtered_votes: pd.DataFrame) -> Dict[int, Lis
         67: "Shaw Island",
     }
 
+    # Get participants who voted for islands
     participant_islands = (
         filtered_votes.groupby("participant_id")["statement_id"]
         .apply(lambda x: [statement_to_island[i] for i in x])
         .to_dict()
     )
+
+    # Add participants who didn't vote for any islands to "Other"
+    all_participant_ids = all_participants[all_participants].index.tolist()
+    for pid in all_participant_ids:
+        if pid not in participant_islands:
+            participant_islands[pid] = ["Other"]
 
     return participant_islands
 
@@ -126,6 +136,7 @@ def assign_participant_coordinates(
 ) -> List[Dict[str, Any]]:
     """
     Assign random coordinates to participants based on their island preferences.
+    Participants with no island votes are placed in an "Other" circular region.
 
     Args:
         participant_islands: Dictionary mapping participant_id to list of island names
@@ -139,16 +150,36 @@ def assign_participant_coordinates(
     for pid, islands in participant_islands.items():
         # Pick first island if multiple votes
         island_name = islands[0]
-        poly = island_shapes.get(island_name)
 
-        if poly:
-            coords = random_point_in_polygon(poly)
+        if island_name == "Other":
+            # Create "Other" region - circular area to the right of the islands
+            # San Juan Islands are roughly around -123.0 longitude, so place "Other" at -122.5
+            center_x, center_y = -122.5, 48.5
+            radius = 0.1  # degrees
+
+            # Generate random point in circle
+            import math
+
+            angle = random.uniform(0, 2 * math.pi)
+            r = radius * math.sqrt(random.uniform(0, 1))
+            coords = [center_x + r * math.cos(angle), center_y + r * math.sin(angle)]
+
             feature = {
                 "type": "Feature",
                 "properties": {"participant_id": pid, "island": island_name},
                 "geometry": {"type": "Point", "coordinates": coords},
             }
             participant_features.append(feature)
+        else:
+            poly = island_shapes.get(island_name)
+            if poly:
+                coords = random_point_in_polygon(poly)
+                feature = {
+                    "type": "Feature",
+                    "properties": {"participant_id": pid, "island": island_name},
+                    "geometry": {"type": "Point", "coordinates": coords},
+                }
+                participant_features.append(feature)
 
     return participant_features
 
@@ -218,17 +249,22 @@ def create_geographic_scatter_plot(participant_geojson: Dict[str, Any]) -> go.Fi
         participant_ids.append(feature["properties"]["participant_id"])
         islands.append(feature["properties"]["island"])
 
-    # Create DataFrame with geographic coordinates
+    # Create DataFrame with geographic coordinates and proper participant ID index
     import pandas as pd
 
     data = pd.DataFrame(coords_data, columns=["longitude", "latitude"])
-    data.index = participant_ids
+    # Ensure participant IDs are set as the index for proper hover tooltips
+    data.index = pd.Index(participant_ids, name="participant_id")
 
-    # Convert islands to pandas Series for color values
-    island_labels = pd.Series(islands, index=participant_ids)
+    # Convert islands to pandas Series for color values with matching index
+    island_labels = pd.Series(islands, index=data.index, name="Island")
 
-    # Sort unique island labels for consistent coloring
-    unique_islands = sorted(island_labels.unique())
+    # Sort unique island labels for consistent coloring (put "Other" last)
+    unique_islands = sorted(
+        [island for island in island_labels.unique() if island != "Other"]
+    )
+    if "Other" in island_labels.unique():
+        unique_islands.append("Other")
     category_orders = {"Island": unique_islands}
 
     # Use the existing scatter plot helper
