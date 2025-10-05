@@ -150,9 +150,26 @@ def assign_participant_coordinates(
     """
     participant_features = []
 
+    # Island size ranking (largest to smallest)
+    # San Juan > Orcas > Lopez > Shaw
+    island_size_priority = {
+        "San Juan Island": 4,  # Largest
+        "Orcas Island": 3,
+        "Lopez Island": 2,
+        "Shaw Island": 1,  # Smallest (highest priority)
+        "Other": 0,  # Special case
+    }
+
     for pid, islands in participant_islands.items():
-        # Pick first island if multiple votes
-        island_name = islands[0]
+        # Choose the smallest island if multiple votes (favor niche/rare choices)
+        if len(islands) > 1:
+            # Sort by size priority (smallest first)
+            islands_sorted = sorted(
+                islands, key=lambda x: island_size_priority.get(x, 0)
+            )
+            island_name = islands_sorted[0]  # Pick the smallest
+        else:
+            island_name = islands[0]
 
         if island_name == "Other":
             # Create "Other" region - circular area to the right of the islands
