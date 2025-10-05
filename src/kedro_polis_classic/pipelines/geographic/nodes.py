@@ -41,6 +41,7 @@ def aggregate_participant_islands(
 ) -> Dict[int, List[str]]:
     """
     Aggregate participants to their preferred islands, including those with no island votes.
+    Only includes participants who meet the minimum vote threshold (participant_mask).
 
     Args:
         filtered_votes: Filtered votes DataFrame
@@ -56,16 +57,23 @@ def aggregate_participant_islands(
         67: "Shaw Island",
     }
 
-    # Get participants who voted for islands
+    # Get participants who are included (meet minimum vote threshold)
+    included_participant_ids = participant_mask.index[participant_mask].tolist()
+
+    # Filter votes to only include participants who meet the threshold
+    filtered_votes_masked = filtered_votes[
+        filtered_votes["participant_id"].isin(included_participant_ids)
+    ]
+
+    # Get participants who voted for islands (from the masked votes)
     participant_islands = (
-        filtered_votes.groupby("participant_id")["statement_id"]
+        filtered_votes_masked.groupby("participant_id")["statement_id"]
         .apply(lambda x: [statement_to_island[i] for i in x])
         .to_dict()
     )
 
     # Add participants who didn't vote for any islands to "Other"
     # Only include participants who are in the participant_mask (meet minimum vote threshold)
-    included_participant_ids = participant_mask.index[participant_mask].tolist()
     for pid in included_participant_ids:
         if pid not in participant_islands:
             participant_islands[pid] = ["Other"]
