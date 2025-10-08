@@ -3,6 +3,7 @@ import re
 import pandas as pd
 from kedro.io import AbstractDataset
 from urllib.parse import urlparse
+import logging
 
 
 def _parse_polis_url(polis_url: str) -> tuple[str, str]:
@@ -147,8 +148,9 @@ class PolisAPIDataset(AbstractDataset):
 
         def _try_load_api_fallback(url: str) -> tuple[pd.DataFrame, pd.DataFrame]:
             """Fallback to API data source when CSV export is not available."""
-            print(
-                f"Falling back to API data source for report ID '{self.report_id}'..."
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                f"CSV export not available, falling back to API data source for report ID '{self.report_id}'"
             )
 
             # Extract conversation_id from report_id (remove 'r' prefix)
@@ -172,8 +174,8 @@ class PolisAPIDataset(AbstractDataset):
                 if "<!DOCTYPE html>" in error_str or "<html" in error_str:
                     raise ValueError(
                         f"Neither CSV export nor API endpoints are available for this Polis instance ({url}). "
-                        f"The server returned HTML for both report ID '{self.report_id}' and conversation ID '{conversation_id}'. "
-                        f"This Polis instance may not support data export or the IDs may be invalid."
+                        f"The server returned HTML for report ID '{self.report_id}'. "
+                        f"This Polis instance may not support data export or the ID may be invalid."
                     ) from e
                 else:
                     raise
@@ -198,7 +200,8 @@ class PolisAPIDataset(AbstractDataset):
 
         except (ssl.SSLError, requests.exceptions.SSLError) as e:
             if base_url.startswith("https://"):
-                print(f"SSL error with HTTPS, trying HTTP: {e}")
+                logger = logging.getLogger(__name__)
+                logger.warning(f"SSL error with HTTPS, trying HTTP: {e}")
                 http_base_url = base_url.replace("https://", "http://")
 
                 # Try CSV first, then API fallback with HTTP
@@ -244,7 +247,8 @@ class PolisAPIDataset(AbstractDataset):
 
         except (ssl.SSLError, requests.exceptions.SSLError) as e:
             if base_url.startswith("https://"):
-                print(f"SSL error with HTTPS, trying HTTP: {e}")
+                logger = logging.getLogger(__name__)
+                logger.warning(f"SSL error with HTTPS, trying HTTP: {e}")
                 http_base_url = base_url.replace("https://", "http://")
 
                 loader = Loader(

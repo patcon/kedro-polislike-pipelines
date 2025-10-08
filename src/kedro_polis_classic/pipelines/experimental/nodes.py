@@ -4,6 +4,9 @@ import plotly.graph_objects as go
 import plotly.express as px
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
 from ..polis_legacy.utils import ensure_series
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def run_component_node(X, params, step_name, **catalog_inputs):
@@ -617,7 +620,7 @@ def save_scatter_plot_image(
     # Save the plot as PNG image
     scatter_plot.write_image(filepath, width=800, height=600, scale=2)
 
-    print(f"Scatter plot image saved to: {filepath}")
+    logger.info(f"Scatter plot image saved to: {filepath}")
     return filepath
 
 
@@ -654,7 +657,7 @@ def create_votes_dataframe(
         {"participant_id": str, "comment_id": str, "vote": int}
     )
 
-    print(f"Votes dataframe created with {len(long_df)} vote records")
+    logger.info(f"Votes dataframe created with {len(long_df)} vote records")
     return long_df
 
 
@@ -696,7 +699,7 @@ def save_projections_json(
         coords = X_clustered[i].tolist()
         X_with_ids.append([str(participant_id), coords])
 
-    print(f"Projections data prepared with {len(X_with_ids)} participants")
+    logger.info(f"Projections data prepared with {len(X_with_ids)} participants")
     return X_with_ids
 
 
@@ -719,7 +722,7 @@ def save_statements_json(raw_comments: pd.DataFrame) -> list:
         .to_dict(orient="records")
     )
 
-    print(f"Statements data prepared with {len(statements_dict)} comments")
+    logger.info(f"Statements data prepared with {len(statements_dict)} comments")
     return statements_dict
 
 
@@ -756,7 +759,7 @@ def save_meta_json(
         "n_neighbors": reducer_params.get("n_neighbors", 10) if reducer_params else 10,
     }
 
-    print(
+    logger.info(
         f"Metadata prepared for polis_url: {polis_url}, extracted polis_id: {polis_id}"
     )
     return meta
