@@ -114,36 +114,107 @@ class PolisAPIDataset(AbstractDataset):
         from reddwarf.data_loader import Loader
         import ssl
         import requests
+        from pydantic import ValidationError
 
         # Try loading with current base_url, fallback to HTTP if HTTPS fails
         base_url = self.base_url
 
-        try:
-            # Use Loader with csv_export data source
-            loader = Loader(
-                polis_id=self.report_id,
-                data_source="csv_export",
-                polis_instance_url=base_url,
+        def _try_load_csv_with_url(url: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+            """Helper function to try loading CSV data with a given URL."""
+            try:
+                loader = Loader(
+                    polis_id=self.report_id,
+                    data_source="csv_export",
+                    polis_instance_url=url,
+                )
+
+                # Convert the list data to DataFrames
+                comments = pd.DataFrame(loader.comments_data)
+                votes = pd.DataFrame(loader.votes_data)
+                return comments, votes
+
+            except ValidationError as e:
+                # Check if the error indicates HTML content was received instead of CSV
+                error_str = str(e)
+                if "<!DOCTYPE html>" in error_str or "<html" in error_str:
+                    raise ValueError(
+                        f"CSV export endpoints not available for this Polis instance ({url}). "
+                        f"The server returned HTML instead of CSV data for report ID '{self.report_id}'."
+                    ) from e
+                else:
+                    # Re-raise the original validation error if it's not HTML-related
+                    raise
+
+        def _try_load_api_fallback(url: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+            """Fallback to API data source when CSV export is not available."""
+            print(
+                f"Falling back to API data source for report ID '{self.report_id}'..."
             )
 
-            # Convert the list data to DataFrames
-            comments = pd.DataFrame(loader.comments_data)
-            votes = pd.DataFrame(loader.votes_data)
+            # Extract conversation_id from report_id (remove 'r' prefix)
+            if not self.report_id:
+                raise ValueError("report_id is required for API fallback")
+
+            try:
+                loader = Loader(
+                    report_id=self.report_id,
+                    polis_instance_url=url,
+                    data_source="api",
+                )
+
+                # Convert the list data to DataFrames
+                comments = pd.DataFrame(loader.comments_data)
+                votes = pd.DataFrame(loader.votes_data)
+                return comments, votes
+
+            except ValidationError as e:
+                error_str = str(e)
+                if "<!DOCTYPE html>" in error_str or "<html" in error_str:
+                    raise ValueError(
+                        f"Neither CSV export nor API endpoints are available for this Polis instance ({url}). "
+                        f"The server returned HTML for both report ID '{self.report_id}' and conversation ID '{conversation_id}'. "
+                        f"This Polis instance may not support data export or the IDs may be invalid."
+                    ) from e
+                else:
+                    raise
+
+        # First, try CSV export
+        try:
+            comments, votes = _try_load_csv_with_url(base_url)
+
+        except ValueError as csv_error:
+            # If CSV failed due to HTML response, try API fallback
+            if "CSV export endpoints not available" in str(csv_error):
+                try:
+                    comments, votes = _try_load_api_fallback(base_url)
+                except Exception as api_error:
+                    # If API also fails, raise a combined error message
+                    raise ValueError(
+                        f"Failed to load data using both CSV export and API fallback. "
+                        f"CSV error: {csv_error}. API error: {api_error}"
+                    ) from api_error
+            else:
+                raise
 
         except (ssl.SSLError, requests.exceptions.SSLError) as e:
             if base_url.startswith("https://"):
                 print(f"SSL error with HTTPS, trying HTTP: {e}")
                 http_base_url = base_url.replace("https://", "http://")
 
-                loader = Loader(
-                    polis_id=self.report_id,
-                    data_source="csv_export",
-                    polis_instance_url=http_base_url,
-                )
-
-                # Convert the list data to DataFrames
-                comments = pd.DataFrame(loader.comments_data)
-                votes = pd.DataFrame(loader.votes_data)
+                # Try CSV first, then API fallback with HTTP
+                try:
+                    comments, votes = _try_load_csv_with_url(http_base_url)
+                except ValueError as csv_error:
+                    if "CSV export endpoints not available" in str(csv_error):
+                        try:
+                            comments, votes = _try_load_api_fallback(http_base_url)
+                        except Exception as api_error:
+                            raise ValueError(
+                                f"Failed to load data using both CSV export and API fallback with HTTP. "
+                                f"CSV error: {csv_error}. API error: {api_error}"
+                            ) from api_error
+                    else:
+                        raise
             else:
                 raise
 
