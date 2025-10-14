@@ -52,16 +52,16 @@ pipelines:
     # filter:
     #   name: NoOpTransformer
 
-  mean_pca_hdbscan:
-    <<: *polis_classic
-    clusterer:
-      name: HDBSCAN
+  # mean_pca_hdbscan:
+  #   <<: *polis_classic
+  #   clusterer:
+  #     name: HDBSCAN
 
-  mean_pca_besthdbscanflat:
-    <<: *polis_classic
-    clusterer:
-      name: BestHDBSCANFlat
-      k_bounds: [2, 5]
+  # mean_pca_besthdbscanflat:
+  #   <<: *polis_classic
+  #   clusterer:
+  #     name: BestHDBSCANFlat
+  #     k_bounds: [2, 5]
 
   mean_pacmap_bestkmeans:
     imputer:
@@ -85,60 +85,60 @@ pipelines:
       k_bounds: [2, 5]
       random_state: ${globals:random_state}
 
-  mean_pacmap_besthdbscanflat:
-    imputer:
-      name: SimpleImputer
-      strategy: mean
+  # mean_pacmap_besthdbscanflat:
+  #   imputer:
+  #     name: SimpleImputer
+  #     strategy: mean
 
-    reducer:
-      name: PaCMAP
-      n_components: 2
-      n_neighbors: null
-      random_state: ${globals:random_state}
+  #   reducer:
+  #     name: PaCMAP
+  #     n_components: 2
+  #     n_neighbors: null
+  #     random_state: ${globals:random_state}
 
-    scaler:
-      name: NoOpTransformer
+  #   scaler:
+  #     name: NoOpTransformer
 
-    filter:
-      name: SampleMaskFilter
-      mask: "input:participant_mask"
+  #   filter:
+  #     name: SampleMaskFilter
+  #     mask: "input:participant_mask"
 
-    clusterer:
-      name: BestHDBSCANFlat
-      k_bounds: [2, 7]
-      min_cluster_size: 20
+  #   clusterer:
+  #     name: BestHDBSCANFlat
+  #     k_bounds: [2, 7]
+  #     min_cluster_size: 20
 
-  mean_localmap_besthdbscanflat_eom: &mean_localmap_besthdbscanflat
-    imputer:
-      name: SimpleImputer
-      strategy: mean
+  # mean_localmap_besthdbscanflat_eom: &mean_localmap_besthdbscanflat
+  #   imputer:
+  #     name: SimpleImputer
+  #     strategy: mean
 
-    reducer:
-      name: LocalMAP
-      n_components: 2
-      n_neighbors: null
-      random_state: ${globals:random_state}
+  #   reducer:
+  #     name: LocalMAP
+  #     n_components: 2
+  #     n_neighbors: null
+  #     random_state: ${globals:random_state}
 
-    scaler:
-      name: NoOpTransformer
+  #   scaler:
+  #     name: NoOpTransformer
 
-    filter:
-      name: SampleMaskFilter
-      mask: "input:participant_mask"
+  #   filter:
+  #     name: SampleMaskFilter
+  #     mask: "input:participant_mask"
 
-    clusterer:
-      name: BestHDBSCANFlat
-      k_bounds: [2, 7]
-      min_cluster_size: 20
-      cluster_selection_method: "eom"
+  #   clusterer:
+  #     name: BestHDBSCANFlat
+  #     k_bounds: [2, 7]
+  #     min_cluster_size: 20
+  #     cluster_selection_method: "eom"
 
-  mean_localmap_besthdbscanflat_leaf:
-    <<: *mean_localmap_besthdbscanflat
-    clusterer:
-      name: BestHDBSCANFlat
-      k_bounds: [2, 7]
-      min_cluster_size: 20
-      cluster_selection_method: "leaf"
+  # mean_localmap_besthdbscanflat_leaf:
+  #   <<: *mean_localmap_besthdbscanflat
+  #   clusterer:
+  #     name: BestHDBSCANFlat
+  #     k_bounds: [2, 7]
+  #     min_cluster_size: 20
+  #     cluster_selection_method: "leaf"
 
   mean_localmap_bestkmeans:
     imputer:
@@ -163,43 +163,43 @@ pipelines:
       k_bounds: [2, 7]
       random_state: ${globals:random_state}
 
-  knn5d_pacmap_besthdbscanflat: &knn5d_pacmap_besthdbscanflat
-    imputer:
-      name: KNNImputer
-      n_neighbors: 5
-      weights: distance
+  # knn5d_pacmap_besthdbscanflat: &knn5d_pacmap_besthdbscanflat
+  #   imputer:
+  #     name: KNNImputer
+  #     n_neighbors: 5
+  #     weights: distance
 
-    reducer:
-      name: PaCMAP
-      n_components: 2
-      n_neighbors: null
-      random_state: ${globals:random_state}
+  #   reducer:
+  #     name: PaCMAP
+  #     n_components: 2
+  #     n_neighbors: null
+  #     random_state: ${globals:random_state}
 
-    scaler:
-      name: NoOpTransformer
+  #   scaler:
+  #     name: NoOpTransformer
 
-    filter:
-      name: SampleMaskFilter
-      mask: "input:participant_mask"
+  #   filter:
+  #     name: SampleMaskFilter
+  #     mask: "input:participant_mask"
 
-    clusterer:
-      name: BestHDBSCANFlat
-      k_bounds: [2, 7]
+  #   clusterer:
+  #     name: BestHDBSCANFlat
+  #     k_bounds: [2, 7]
 
-  knn5d_localmap_besthdbscanflat:
-    <<: *knn5d_pacmap_besthdbscanflat
-    reducer:
-      name: LocalMAP
-      n_components: 2
-      n_neighbors: null
-      random_state: ${globals:random_state}
+  # knn5d_localmap_besthdbscanflat:
+  #   <<: *knn5d_pacmap_besthdbscanflat
+  #   reducer:
+  #     name: LocalMAP
+  #     n_components: 2
+  #     n_neighbors: null
+  #     random_state: ${globals:random_state}
 
-  knn5d_pca_besthdbscanflat:
-    <<: *knn5d_pacmap_besthdbscanflat
-    reducer:
-      name: PCA
-      n_components: 2
-      random_state: ${globals:random_state}
+  # knn5d_pca_besthdbscanflat:
+  #   <<: *knn5d_pacmap_besthdbscanflat
+  #   reducer:
+  #     name: PCA
+  #     n_components: 2
+  #     random_state: ${globals:random_state}
 
   knn5d_pacmap_bestkmeans: &knn5d_pacmap_bestkmeans
     imputer:
