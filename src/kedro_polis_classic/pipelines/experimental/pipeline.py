@@ -496,6 +496,18 @@ def create_branching_pipeline() -> Pipeline:
         tags=["shared", "dataset"]
     ))
 
+    # Add single shared votes parquet node (same for all combinations)
+    nodes.append(node(
+        func=create_votes_dataframe,
+        inputs=[
+            "raw_vote_matrix",
+            "participant_mask",
+        ],
+        outputs="votes_parquet",
+        name="create_votes_dataframe",
+        tags=["shared", "dataset"]
+    ))
+
     return preprocessing_pipeline + Pipeline(nodes)
 
 
@@ -531,48 +543,41 @@ def _add_visualization_nodes(nodes: list, combination_key: str, filter_output: s
         tags=tags + ["visualization"]
     ))
 
-    # Save scatter plot images
-    def create_image_saver_wrapper(pipeline_name, plot_suffix=""):
-        def image_saver_wrapper(scatter_plot):
-            filename_suffix = f"_{plot_suffix}" if plot_suffix else ""
-            return save_scatter_plot_image(
-                scatter_plot, f"{pipeline_name}{filename_suffix}"
-            )
-        return image_saver_wrapper
+    # Only add plot image saving nodes if generate_plots is True
+    if generate_plots:
+        # Save scatter plot images
+        def create_image_saver_wrapper(pipeline_name, plot_suffix=""):
+            def image_saver_wrapper(scatter_plot):
+                filename_suffix = f"_{plot_suffix}" if plot_suffix else ""
+                return save_scatter_plot_image(
+                    scatter_plot, f"{pipeline_name}{filename_suffix}"
+                )
+            return image_saver_wrapper
 
-    # Save original cluster plot
-    nodes.append(node(
-        func=create_image_saver_wrapper(combination_key, "cluster"),
-        inputs=f"{combination_key}__scatter_plot",
-        outputs=f"{combination_key}__scatter_plot_image_path",
-        name=f"{combination_key}_save_scatter_plot_image",
-        tags=tags + ["visualization", "save"]
-    ))
+        # Save original cluster plot
+        nodes.append(node(
+            func=create_image_saver_wrapper(combination_key, "cluster"),
+            inputs=f"{combination_key}__scatter_plot",
+            outputs=f"{combination_key}__scatter_plot_image_path",
+            name=f"{combination_key}_save_scatter_plot_image",
+            tags=tags + ["visualization", "save"]
+        ))
 
-    # Save participant ID plot
-    nodes.append(node(
-        func=create_image_saver_wrapper(combination_key, "participant_id"),
-        inputs=f"{combination_key}__scatter_plot_by_participant_id",
-        outputs=f"{combination_key}__scatter_plot_by_participant_id_image_path",
-        name=f"{combination_key}_save_scatter_plot_by_participant_id_image",
-        tags=tags + ["visualization", "save"]
-    ))
+        # Save participant ID plot
+        nodes.append(node(
+            func=create_image_saver_wrapper(combination_key, "participant_id"),
+            inputs=f"{combination_key}__scatter_plot_by_participant_id",
+            outputs=f"{combination_key}__scatter_plot_by_participant_id_image_path",
+            name=f"{combination_key}_save_scatter_plot_by_participant_id_image",
+            tags=tags + ["visualization", "save"]
+        ))
 
 
 def _add_dataset_generation_nodes(nodes: list, combination_key: str, filter_output: str, tags: list):
     """Add Red-Dwarf dataset generation nodes for a specific reducer-clusterer combination."""
 
-    # Generate votes dataframe for parquet storage
-    nodes.append(node(
-        func=create_votes_dataframe,
-        inputs=[
-            "raw_vote_matrix",
-            "participant_mask",
-        ],
-        outputs=f"{combination_key}__votes_parquet",
-        name=f"{combination_key}_create_votes_dataframe",
-        tags=tags + ["dataset"]
-    ))
+    # Note: votes_parquet is now shared across all combinations since it only depends on
+    # raw_vote_matrix and participant_mask, which are the same for all combinations
 
     # Generate projections JSON
     nodes.append(node(
@@ -611,7 +616,7 @@ def _add_dataset_generation_nodes(nodes: list, combination_key: str, filter_outp
             else:
                 # Old format: reducer_clusterer
                 reducer_name = parts[0]
-            
+
             reducer_config = None
             for reducer in all_reducers:
                 if reducer["name"].lower() == reducer_name:

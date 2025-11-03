@@ -108,6 +108,14 @@ statements_json:
     kedro-viz:
       layer: primary
 
+# Shared votes parquet - same across all pipelines since it only depends on raw_vote_matrix and participant_mask
+votes_parquet:
+  type: pandas.ParquetDataset
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/shared/votes.parquet
+  metadata:
+    kedro-viz:
+      layer: primary
+
 "{pipeline_name}__meta_json":
   type: json.JSONDataset
   filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/{pipeline_name}/03_primary/meta.json
