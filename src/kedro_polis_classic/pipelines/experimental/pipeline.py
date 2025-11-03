@@ -236,16 +236,96 @@ def create_pipeline(pipeline_key) -> Pipeline:
     return preprocessing_pipeline + Pipeline(nodes)
 
 
+def _update_subpipeline_outputs(subpipeline: Pipeline, combination_key: str) -> Pipeline:
+    """
+    Update a subpipeline's node outputs to use the full combination key names.
+
+    This ensures the outputs match what the catalog expects (e.g., 'mean_pca_bestkmeans__scatter_plot')
+    instead of the generic subpipeline names (e.g., 'scatter_plot').
+    """
+    updated_nodes = []
+
+    # Mapping from generic names to combination-specific names
+    output_mapping = {
+        "scatter_plot": f"{combination_key}__scatter_plot",
+        "scatter_plot_by_participant_id": f"{combination_key}__scatter_plot_by_participant_id",
+        "scatter_plot_image_path": f"{combination_key}__scatter_plot_image_path",
+        "scatter_plot_by_participant_id_image_path": f"{combination_key}__scatter_plot_by_participant_id_image_path",
+        "votes_parquet": f"{combination_key}__votes_parquet",
+        "projections_json": f"{combination_key}__projections_json",
+        "statements_json": f"{combination_key}__statements_json",
+        "meta_json": f"{combination_key}__meta_json",
+    }
+
+    for original_node in subpipeline.nodes:
+        # Update outputs
+        new_outputs = original_node.outputs  # Default to original
+        if isinstance(original_node.outputs, str):
+            # Handle both final outputs and intermediate outputs
+            if original_node.outputs in output_mapping:
+                new_outputs = output_mapping[original_node.outputs]
+            elif original_node.outputs in ["imputer_output", "reducer_output", "scaler_output", "filter_output", "clusterer_output"]:
+                new_outputs = f"{combination_key}__{original_node.outputs}"
+            # Keep single outputs as strings, not lists
+        elif isinstance(original_node.outputs, (list, tuple)):
+            new_outputs = []
+            for output in original_node.outputs:
+                if output in output_mapping:
+                    new_outputs.append(output_mapping[output])
+                elif output in ["imputer_output", "reducer_output", "scaler_output", "filter_output", "clusterer_output"]:
+                    new_outputs.append(f"{combination_key}__{output}")
+                else:
+                    new_outputs.append(output)
+
+        # Update inputs to reference the correct intermediate outputs
+        new_inputs = []
+        if isinstance(original_node.inputs, str):
+            if original_node.inputs in ["imputer_output", "reducer_output", "scaler_output", "filter_output", "clusterer_output"]:
+                new_inputs = f"{combination_key}__{original_node.inputs}"
+            elif original_node.inputs in ["scatter_plot", "scatter_plot_by_participant_id", "votes_parquet", "projections_json", "statements_json", "meta_json"]:
+                new_inputs = f"{combination_key}__{original_node.inputs}"
+            else:
+                new_inputs = original_node.inputs
+        elif isinstance(original_node.inputs, (list, tuple)):
+            new_inputs = []
+            for input_name in original_node.inputs:
+                # Map intermediate outputs between nodes within the subpipeline
+                if input_name in ["imputer_output", "reducer_output", "scaler_output", "filter_output", "clusterer_output"]:
+                    new_inputs.append(f"{combination_key}__{input_name}")
+                elif input_name in ["scatter_plot", "scatter_plot_by_participant_id", "votes_parquet", "projections_json", "statements_json", "meta_json"]:
+                    new_inputs.append(f"{combination_key}__{input_name}")
+                else:
+                    new_inputs.append(input_name)
+        else:
+            new_inputs = original_node.inputs
+
+        # Update node name to include combination key
+        new_name = f"{combination_key}_{original_node.name}"
+
+        # Create updated node
+        updated_node = node(
+            func=original_node.func,
+            inputs=new_inputs,
+            outputs=new_outputs,
+            name=new_name,
+            tags=original_node.tags
+        )
+
+        updated_nodes.append(updated_node)
+
+    return Pipeline(updated_nodes)
+
+
 def create_branching_pipeline() -> Pipeline:
     """
-    Create a branching DAG pipeline where preprocessing runs once, each reducer runs once,
-    and then multiple clusterers run on each reducer's output.
+    Create a branching DAG pipeline where preprocessing runs once, and each
+    imputer-reducer-clusterer combination runs as a separate subpipeline.
 
-    This approach eliminates redundant computation by sharing intermediate results
-    across multiple pipeline branches.
+    This approach eliminates redundant computation by sharing preprocessing results
+    and organizes complex combinations into manageable subpipelines.
 
     Returns:
-        Pipeline: A Kedro pipeline containing the branching DAG structure
+        Pipeline: A Kedro pipeline containing the branching DAG structure with subpipelines
     """
     from kedro.config import OmegaConfigLoader
 
@@ -279,8 +359,6 @@ def create_branching_pipeline() -> Pipeline:
         },
     )
 
-    nodes = []
-
     # Get configuration sections
     shared_stages = config.get("shared_stages", {})
     imputers = config.get("imputers", [])
@@ -303,11 +381,12 @@ def create_branching_pipeline() -> Pipeline:
         # Build all combinations
         valid_combinations = None
 
-    # Create imputer-reducer-clusterer combinations
-    for i, imputer_config in enumerate(imputers):
+    # Create subpipelines for each combination
+    subpipelines = []
+
+    for imputer_config in imputers:
         imputer_name = imputer_config["name"]
         imputer_estimator = imputer_config["estimator"]
-        imputer_key = f"imputer_{imputer_name.lower()}"
 
         # Check if any combinations are enabled for this imputer
         if valid_combinations:
@@ -317,35 +396,9 @@ def create_branching_pipeline() -> Pipeline:
             if not imputer_has_enabled_combos:
                 continue
 
-        # Create imputer node
-        required_catalog_inputs = _extract_input_parameters(imputer_config)
-        inputs = ["masked_vote_matrix"]
-        inputs.extend(required_catalog_inputs)
-
-        def create_imputer_wrapper(imputer_cfg, required_inputs):
-            def imputer_wrapper(*args):
-                X = args[0]
-                catalog_kwargs = {
-                    name: args[i + 1]
-                    for i, name in enumerate(required_inputs)
-                    if i + 1 < len(args)
-                }
-                return run_component_node(X, imputer_cfg, "imputer", **catalog_kwargs)
-            return imputer_wrapper
-
-        nodes.append(node(
-            func=create_imputer_wrapper(imputer_config, required_catalog_inputs),
-            inputs=inputs,
-            outputs=f"{imputer_key}__output",
-            name=f"{imputer_key}_node",
-            tags=["imputer", imputer_name.lower()]
-        ))
-
-        # For each imputer, create reducer branches
-        for j, reducer_config in enumerate(reducers):
+        for reducer_config in reducers:
             reducer_name = reducer_config["name"]
             reducer_estimator = reducer_config["estimator"]
-            imputer_reducer_key = f"{imputer_name.lower()}_{reducer_name.lower()}"
 
             # Check if any clusterer combinations are enabled for this imputer-reducer pair
             if valid_combinations:
@@ -356,33 +409,7 @@ def create_branching_pipeline() -> Pipeline:
                 if not pair_has_enabled_combos:
                     continue
 
-            # Create reducer node - exclude parameters starting with underscore (special config keys)
-            reducer_config_clean = {k: v for k, v in reducer_config.items() if not k.startswith("_")}
-            required_catalog_inputs = _extract_input_parameters(reducer_config_clean)
-            inputs = [f"{imputer_key}__output"]
-            inputs.extend(required_catalog_inputs)
-
-            def create_reducer_wrapper(reducer_cfg, required_inputs):
-                def reducer_wrapper(*args):
-                    X = args[0]
-                    catalog_kwargs = {
-                        name: args[i + 1]
-                        for i, name in enumerate(required_inputs)
-                        if i + 1 < len(args)
-                    }
-                    return run_component_node(X, reducer_cfg, "reducer", **catalog_kwargs)
-                return reducer_wrapper
-
-            nodes.append(node(
-                func=create_reducer_wrapper(reducer_config_clean, required_catalog_inputs),
-                inputs=inputs,
-                outputs=f"{imputer_reducer_key}__reducer_output",
-                name=f"{imputer_reducer_key}_reducer_node",
-                tags=["reducer", imputer_name.lower(), reducer_name.lower()]
-            ))
-
-            # For each imputer-reducer pair, branch to enabled clusterers
-            for k, clusterer_config in enumerate(clusterers):
+            for clusterer_config in clusterers:
                 clusterer_name = clusterer_config["name"]
                 clusterer_estimator = clusterer_config["estimator"]
                 combination_key = f"{imputer_name.lower()}_{reducer_name.lower()}_{clusterer_name.lower()}"
@@ -391,103 +418,346 @@ def create_branching_pipeline() -> Pipeline:
                 if valid_combinations and (imputer_estimator, reducer_estimator, clusterer_estimator) not in valid_combinations:
                     continue
 
-                combination_tags = [
-                    combination_key,
-                    imputer_name.lower(),
-                    reducer_name.lower(),
-                    clusterer_name.lower(),
-                    "combination"
-                ]
+                # Create subpipeline for this combination
+                combination_subpipeline = create_combination_subpipeline(
+                    combination_key=combination_key,
+                    imputer_config=imputer_config,
+                    reducer_config=reducer_config,
+                    clusterer_config=clusterer_config,
+                    shared_stages=shared_stages,
+                    imputer_input="masked_vote_matrix"
+                )
 
-                # Scaler node - now get scaler config from the reducer config
-                scaler_config = reducer_config.get("_scaler", {})
-                if scaler_config:
-                    required_catalog_inputs = _extract_input_parameters(scaler_config)
-                    inputs = [f"{imputer_reducer_key}__reducer_output"]
-                    inputs.extend(required_catalog_inputs)
+                # For now, let's not use namespaces to avoid catalog mapping issues
+                # Instead, we'll modify the subpipeline to use the full combination key names
+                combination_subpipeline_with_keys = _update_subpipeline_outputs(
+                    combination_subpipeline, combination_key
+                )
 
-                    def create_scaler_wrapper(scaler_cfg, required_inputs):
-                        def scaler_wrapper(*args):
-                            X = args[0]
-                            catalog_kwargs = {
-                                name: args[i + 1]
-                                for i, name in enumerate(required_inputs)
-                                if i + 1 < len(args)
-                            }
-                            return run_component_node(X, scaler_cfg, "scaler", **catalog_kwargs)
-                        return scaler_wrapper
+                subpipelines.append(combination_subpipeline_with_keys)
 
-                    nodes.append(node(
-                        func=create_scaler_wrapper(scaler_config, required_catalog_inputs),
-                        inputs=inputs,
-                        outputs=f"{combination_key}__scaler_output",
-                        name=f"{combination_key}_scaler_node",
-                        tags=combination_tags + ["scaler"]
-                    ))
-                    scaler_output = f"{combination_key}__scaler_output"
-                else:
-                    scaler_output = f"{imputer_reducer_key}__reducer_output"
+    # Combine preprocessing with all subpipelines
+    combined_pipeline = preprocessing_pipeline
+    for subpipeline in subpipelines:
+        combined_pipeline += subpipeline
 
-                # Filter node
-                filter_config = shared_stages.get("filter", {})
-                if filter_config:
-                    required_catalog_inputs = _extract_input_parameters(filter_config)
-                    inputs = [scaler_output]
-                    inputs.extend(required_catalog_inputs)
+    return combined_pipeline
 
-                    def create_filter_wrapper(filter_cfg, required_inputs):
-                        def filter_wrapper(*args):
-                            X = args[0]
-                            catalog_kwargs = {
-                                name: args[i + 1]
-                                for i, name in enumerate(required_inputs)
-                                if i + 1 < len(args)
-                            }
-                            return run_component_node(X, filter_cfg, "filter", **catalog_kwargs)
-                        return filter_wrapper
 
-                    nodes.append(node(
-                        func=create_filter_wrapper(filter_config, required_catalog_inputs),
-                        inputs=inputs,
-                        outputs=f"{combination_key}__filter_output",
-                        name=f"{combination_key}_filter_node",
-                        tags=combination_tags + ["filter"]
-                    ))
-                    filter_output = f"{combination_key}__filter_output"
-                else:
-                    filter_output = scaler_output
+def create_combination_subpipeline(
+    combination_key: str,
+    imputer_config: dict,
+    reducer_config: dict,
+    clusterer_config: dict,
+    shared_stages: dict,
+    imputer_input: str = "masked_vote_matrix"
+) -> Pipeline:
+    """
+    Create a subpipeline for a specific imputer-reducer-clusterer combination.
 
-                # Clusterer node
-                required_catalog_inputs = _extract_input_parameters(clusterer_config)
-                inputs = [filter_output]
-                inputs.extend(required_catalog_inputs)
+    This encapsulates all the processing steps for one combination into a single
+    subpipeline that can be used with namespace to hide complexity.
 
-                def create_clusterer_wrapper(clusterer_cfg, required_inputs):
-                    def clusterer_wrapper(*args):
-                        X = args[0]
-                        catalog_kwargs = {
-                            name: args[i + 1]
-                            for i, name in enumerate(required_inputs)
-                            if i + 1 < len(args)
-                        }
-                        return run_component_node(X, clusterer_cfg, "clusterer", **catalog_kwargs)
-                    return clusterer_wrapper
+    Args:
+        combination_key: Unique identifier for this combination (e.g., "knn5d_pacmap_bestkmeans")
+        imputer_config: Configuration for the imputer step
+        reducer_config: Configuration for the reducer step
+        clusterer_config: Configuration for the clusterer step
+        shared_stages: Configuration for shared stages like filter
+        imputer_input: Input dataset name for the imputer
 
-                nodes.append(node(
-                    func=create_clusterer_wrapper(clusterer_config, required_catalog_inputs),
-                    inputs=inputs,
-                    outputs=f"{combination_key}__clusterer_output",
-                    name=f"{combination_key}_clusterer_node",
-                    tags=combination_tags + ["clusterer"]
-                ))
+    Returns:
+        Pipeline: A Kedro subpipeline containing all steps for this combination
+    """
+    nodes = []
+    combination_tags = [
+        combination_key,
+        imputer_config["name"].lower(),
+        reducer_config["name"].lower(),
+        clusterer_config["name"].lower(),
+        "combination"
+    ]
 
-                # Add visualization nodes for this combination
-                _add_visualization_nodes(nodes, combination_key, filter_output, combination_tags)
+    # Imputer node
+    required_catalog_inputs = _extract_input_parameters(imputer_config)
+    inputs = [imputer_input]
+    inputs.extend(required_catalog_inputs)
 
-                # Add Red-Dwarf dataset generation nodes
-                _add_dataset_generation_nodes(nodes, combination_key, filter_output, combination_tags)
+    def create_imputer_wrapper(imputer_cfg, required_inputs):
+        def imputer_wrapper(*args):
+            X = args[0]
+            catalog_kwargs = {
+                name: args[i + 1]
+                for i, name in enumerate(required_inputs)
+                if i + 1 < len(args)
+            }
+            return (run_component_node(X, imputer_cfg, "imputer", **catalog_kwargs),)
+        return imputer_wrapper
 
-    return preprocessing_pipeline + Pipeline(nodes)
+    nodes.append(node(
+        func=create_imputer_wrapper(imputer_config, required_catalog_inputs),
+        inputs=inputs,
+        outputs="imputer_output",
+        name="imputer_node",
+        tags=combination_tags + ["imputer"]
+    ))
+
+    # Reducer node
+    reducer_config_clean = {k: v for k, v in reducer_config.items() if not k.startswith("_")}
+    required_catalog_inputs = _extract_input_parameters(reducer_config_clean)
+    inputs = ["imputer_output"]
+    inputs.extend(required_catalog_inputs)
+
+    def create_reducer_wrapper(reducer_cfg, required_inputs):
+        def reducer_wrapper(*args):
+            X = args[0]
+            catalog_kwargs = {
+                name: args[i + 1]
+                for i, name in enumerate(required_inputs)
+                if i + 1 < len(args)
+            }
+            return (run_component_node(X, reducer_cfg, "reducer", **catalog_kwargs),)
+        return reducer_wrapper
+
+    nodes.append(node(
+        func=create_reducer_wrapper(reducer_config_clean, required_catalog_inputs),
+        inputs=inputs,
+        outputs="reducer_output",
+        name="reducer_node",
+        tags=combination_tags + ["reducer"]
+    ))
+
+    # Scaler node (if configured in reducer)
+    scaler_config = reducer_config.get("_scaler", {})
+    if scaler_config:
+        required_catalog_inputs = _extract_input_parameters(scaler_config)
+        inputs = ["reducer_output"]
+        inputs.extend(required_catalog_inputs)
+
+        def create_scaler_wrapper(scaler_cfg, required_inputs):
+            def scaler_wrapper(*args):
+                X = args[0]
+                catalog_kwargs = {
+                    name: args[i + 1]
+                    for i, name in enumerate(required_inputs)
+                    if i + 1 < len(args)
+                }
+                return (run_component_node(X, scaler_cfg, "scaler", **catalog_kwargs),)
+            return scaler_wrapper
+
+        nodes.append(node(
+            func=create_scaler_wrapper(scaler_config, required_catalog_inputs),
+            inputs=inputs,
+            outputs="scaler_output",
+            name="scaler_node",
+            tags=combination_tags + ["scaler"]
+        ))
+        scaler_output = "scaler_output"
+    else:
+        scaler_output = "reducer_output"
+
+    # Filter node
+    filter_config = shared_stages.get("filter", {})
+    if filter_config:
+        required_catalog_inputs = _extract_input_parameters(filter_config)
+        inputs = [scaler_output]
+        inputs.extend(required_catalog_inputs)
+
+        def create_filter_wrapper(filter_cfg, required_inputs):
+            def filter_wrapper(*args):
+                X = args[0]
+                catalog_kwargs = {
+                    name: args[i + 1]
+                    for i, name in enumerate(required_inputs)
+                    if i + 1 < len(args)
+                }
+                return (run_component_node(X, filter_cfg, "filter", **catalog_kwargs),)
+            return filter_wrapper
+
+        nodes.append(node(
+            func=create_filter_wrapper(filter_config, required_catalog_inputs),
+            inputs=inputs,
+            outputs="filter_output",
+            name="filter_node",
+            tags=combination_tags + ["filter"]
+        ))
+        filter_output = "filter_output"
+    else:
+        filter_output = scaler_output
+
+    # Clusterer node
+    required_catalog_inputs = _extract_input_parameters(clusterer_config)
+    inputs = [filter_output]
+    inputs.extend(required_catalog_inputs)
+
+    def create_clusterer_wrapper(clusterer_cfg, required_inputs):
+        def clusterer_wrapper(*args):
+            X = args[0]
+            catalog_kwargs = {
+                name: args[i + 1]
+                for i, name in enumerate(required_inputs)
+                if i + 1 < len(args)
+            }
+            return (run_component_node(X, clusterer_cfg, "clusterer", **catalog_kwargs),)
+        return clusterer_wrapper
+
+    nodes.append(node(
+        func=create_clusterer_wrapper(clusterer_config, required_catalog_inputs),
+        inputs=inputs,
+        outputs="clusterer_output",
+        name="clusterer_node",
+        tags=combination_tags + ["clusterer"]
+    ))
+
+    # Add visualization nodes for this combination
+    _add_subpipeline_visualization_nodes(nodes, filter_output, combination_tags)
+
+    # Add Red-Dwarf dataset generation nodes
+    _add_subpipeline_dataset_generation_nodes(nodes, filter_output, combination_tags, reducer_config)
+
+    return Pipeline(nodes)
+
+
+def _add_subpipeline_visualization_nodes(nodes: list, filter_output: str, tags: list):
+    """Add visualization nodes for a subpipeline."""
+
+    # Original scatter plot colored by cluster
+    def create_scatter_plot_wrapper():
+        def scatter_plot_wrapper(filter_output, clusterer_output, participant_mask, flip_x, flip_y):
+            return (create_scatter_plot(filter_output, clusterer_output, participant_mask, flip_x, flip_y),)
+        return scatter_plot_wrapper
+
+    nodes.append(node(
+        func=create_scatter_plot_wrapper(),
+        inputs=[
+            filter_output,
+            "clusterer_output",
+            "participant_mask",
+            "params:visualization.flip_x",
+            "params:visualization.flip_y",
+        ],
+        outputs="scatter_plot",
+        name="create_scatter_plot",
+        tags=tags + ["visualization"]
+    ))
+
+    # Scatter plot colored by participant ID
+    def create_scatter_plot_by_participant_id_wrapper():
+        def scatter_plot_by_participant_id_wrapper(filter_output, participant_mask, flip_x, flip_y):
+            return (create_scatter_plot_by_participant_id(filter_output, participant_mask, flip_x, flip_y),)
+        return scatter_plot_by_participant_id_wrapper
+
+    nodes.append(node(
+        func=create_scatter_plot_by_participant_id_wrapper(),
+        inputs=[
+            filter_output,
+            "participant_mask",
+            "params:visualization.flip_x",
+            "params:visualization.flip_y",
+        ],
+        outputs="scatter_plot_by_participant_id",
+        name="create_scatter_plot_by_participant_id",
+        tags=tags + ["visualization"]
+    ))
+
+    # Save scatter plot images
+    def create_image_saver_wrapper(plot_suffix=""):
+        def image_saver_wrapper(scatter_plot):
+            # Use the combination key from tags for filename
+            combination_key = tags[0]  # First tag is the combination key
+            filename_suffix = f"_{plot_suffix}" if plot_suffix else ""
+            return (save_scatter_plot_image(
+                scatter_plot, f"{combination_key}{filename_suffix}"
+            ),)
+        return image_saver_wrapper
+
+    # Save original cluster plot
+    nodes.append(node(
+        func=create_image_saver_wrapper("cluster"),
+        inputs="scatter_plot",
+        outputs="scatter_plot_image_path",
+        name="save_scatter_plot_image",
+        tags=tags + ["visualization", "save"]
+    ))
+
+    # Save participant ID plot
+    nodes.append(node(
+        func=create_image_saver_wrapper("participant_id"),
+        inputs="scatter_plot_by_participant_id",
+        outputs="scatter_plot_by_participant_id_image_path",
+        name="save_scatter_plot_by_participant_id_image",
+        tags=tags + ["visualization", "save"]
+    ))
+
+
+def _add_subpipeline_dataset_generation_nodes(nodes: list, filter_output: str, tags: list, reducer_config: dict):
+    """Add Red-Dwarf dataset generation nodes for a subpipeline."""
+
+    # Generate votes dataframe for parquet storage
+    def create_votes_wrapper():
+        def votes_wrapper(raw_vote_matrix, participant_mask):
+            # Return as tuple since Kedro converts single outputs to lists
+            return (create_votes_dataframe(raw_vote_matrix, participant_mask),)
+        return votes_wrapper
+
+    nodes.append(node(
+        func=create_votes_wrapper(),
+        inputs=[
+            "raw_vote_matrix",
+            "participant_mask",
+        ],
+        outputs="votes_parquet",
+        name="create_votes_dataframe",
+        tags=tags + ["dataset"]
+    ))
+
+    # Generate projections JSON
+    def create_projections_wrapper():
+        def projections_wrapper(filter_output, participant_mask):
+            # Return as tuple since Kedro converts single outputs to lists
+            return (save_projections_json(filter_output, participant_mask),)
+        return projections_wrapper
+
+    nodes.append(node(
+        func=create_projections_wrapper(),
+        inputs=[
+            filter_output,
+            "participant_mask",
+        ],
+        outputs="projections_json",
+        name="save_projections_json",
+        tags=tags + ["dataset"]
+    ))
+
+    # Generate statements JSON
+    def create_statements_wrapper():
+        def statements_wrapper(raw_comments):
+            # Return as tuple since Kedro converts single outputs to lists
+            return (save_statements_json(raw_comments),)
+        return statements_wrapper
+
+    nodes.append(node(
+        func=create_statements_wrapper(),
+        inputs="raw_comments",
+        outputs="statements_json",
+        name="save_statements_json",
+        tags=tags + ["dataset"]
+    ))
+
+    # Generate metadata JSON
+    def create_meta_wrapper():
+        def meta_wrapper(polis_url):
+            # Return as tuple since Kedro converts single outputs to lists
+            return (save_meta_json(polis_url, reducer_config),)
+        return meta_wrapper
+
+    nodes.append(node(
+        func=create_meta_wrapper(),
+        inputs="params:polis_url",
+        outputs="meta_json",
+        name="save_meta_json",
+        tags=tags + ["dataset"]
+    ))
 
 
 def _add_visualization_nodes(nodes: list, combination_key: str, filter_output: str, tags: list):
@@ -608,7 +878,7 @@ def _add_dataset_generation_nodes(nodes: list, combination_key: str, filter_outp
             else:
                 # Old format: reducer_clusterer
                 reducer_name = parts[0]
-            
+
             reducer_config = None
             for reducer in all_reducers:
                 if reducer["name"].lower() == reducer_name:
