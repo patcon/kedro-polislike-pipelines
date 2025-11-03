@@ -260,19 +260,24 @@ pipelines:
       random_state: ${globals:random_state}
 
 # Branching pipeline configuration
-# This creates a single DAG where preprocessing runs once, each reducer runs once,
-# and then multiple clusterers run on each reducer's output
+# This creates a single DAG where preprocessing runs once, each imputer runs once,
+# each reducer runs once per imputer, and then multiple clusterers run on each
+# imputer-reducer combination's output
 branching_pipeline:
   shared_stages:
-    imputer:
-      name: SimpleImputer
-      strategy: mean
     scaler:
       name: SparsityAwareScaler
       X_sparse: "input:masked_vote_matrix"
     filter:
       name: SampleMaskFilter
       mask: "input:participant_mask"
+
+  imputers:
+    - name: SimpleImputer
+      strategy: mean
+    - name: KNNImputer
+      n_neighbors: 5
+      weights: distance
 
   reducers:
     - name: PCA
@@ -300,10 +305,19 @@ branching_pipeline:
       random_state: ${globals:random_state}
 
   # Optional: specify which combinations to build (if not specified, builds all combinations)
+  # New format supports imputer-reducer-clusterer combinations:
+  # enabled_combinations:
+  #   - imputer: SimpleImputer
+  #     reducer: PCA
+  #     clusterer: BestKMeans
+  #   - imputer: SimpleImputer
+  #     reducer: PaCMAP
+  #     clusterer: BestKMeans
+  #   - imputer: KNNImputer
+  #     reducer: UMAP
+  #     clusterer: BestHDBSCANFlat
+  #
+  # Legacy 2-tuple format is still supported for backward compatibility:
   # enabled_combinations:
   #   - reducer: PCA
   #     clusterer: BestKMeans
-  #   - reducer: PaCMAP
-  #     clusterer: BestKMeans
-  #   - reducer: UMAP
-  #     clusterer: BestHDBSCANFlat

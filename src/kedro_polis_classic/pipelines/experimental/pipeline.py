@@ -281,11 +281,42 @@ def create_branching_pipeline() -> Pipeline:
 
     nodes = []
 
-    # 1. Add shared imputer (runs once)
+    # Get configuration sections
     shared_stages = config.get("shared_stages", {})
-    imputer_config = shared_stages.get("imputer", {})
+    imputers = config.get("imputers", [])
+    reducers = config.get("reducers", [])
+    clusterers = config.get("clusterers", [])
+    enabled_combinations = config.get("enabled_combinations", None)
 
-    if imputer_config:
+    # If enabled_combinations is specified, filter to only those combinations
+    if enabled_combinations:
+        valid_combinations = set()
+        for combo in enabled_combinations:
+            # Support both 2-tuple (reducer, clusterer) and 3-tuple (imputer, reducer, clusterer)
+            if len(combo) == 2:
+                # Legacy format: assume first imputer for backward compatibility
+                imputer_name = imputers[0]["name"] if imputers else "SimpleImputer"
+                valid_combinations.add((imputer_name, combo["reducer"], combo["clusterer"]))
+            else:
+                valid_combinations.add((combo["imputer"], combo["reducer"], combo["clusterer"]))
+    else:
+        # Build all combinations
+        valid_combinations = None
+
+    # Create imputer-reducer-clusterer combinations
+    for i, imputer_config in enumerate(imputers):
+        imputer_name = imputer_config["name"]
+        imputer_key = f"imputer_{imputer_name.lower()}"
+
+        # Check if any combinations are enabled for this imputer
+        if valid_combinations:
+            imputer_has_enabled_combos = any(
+                combo[0] == imputer_name for combo in valid_combinations
+            )
+            if not imputer_has_enabled_combos:
+                continue
+
+        # Create imputer node
         required_catalog_inputs = _extract_input_parameters(imputer_config)
         inputs = ["masked_vote_matrix"]
         inputs.extend(required_catalog_inputs)
@@ -304,168 +335,153 @@ def create_branching_pipeline() -> Pipeline:
         nodes.append(node(
             func=create_imputer_wrapper(imputer_config, required_catalog_inputs),
             inputs=inputs,
-            outputs="shared__imputer_output",
-            name="shared_imputer_node",
-            tags=["shared", "imputer"]
-        ))
-        imputer_output = "shared__imputer_output"
-    else:
-        imputer_output = "masked_vote_matrix"
-
-    # 2. Branch: one reducer node per reducer config
-    reducers = config.get("reducers", [])
-    clusterers = config.get("clusterers", [])
-    enabled_combinations = config.get("enabled_combinations", None)
-
-    # If enabled_combinations is specified, filter to only those combinations
-    if enabled_combinations:
-        valid_combinations = set()
-        for combo in enabled_combinations:
-            valid_combinations.add((combo["reducer"], combo["clusterer"]))
-    else:
-        # Build all combinations
-        valid_combinations = None
-
-    for i, reducer_config in enumerate(reducers):
-        reducer_name = reducer_config["name"]
-        reducer_key = f"reducer_{reducer_name.lower()}"
-
-        # Check if any clusterer combinations are enabled for this reducer
-        if valid_combinations:
-            reducer_has_enabled_combos = any(
-                combo[0] == reducer_name for combo in valid_combinations
-            )
-            if not reducer_has_enabled_combos:
-                continue
-
-        required_catalog_inputs = _extract_input_parameters(reducer_config)
-        inputs = [imputer_output]
-        inputs.extend(required_catalog_inputs)
-
-        # Create a wrapper that includes the reducer config directly
-        def create_reducer_wrapper(reducer_cfg, required_inputs):
-            def reducer_wrapper(*args):
-                X = args[0]
-                # Map remaining args to catalog input names
-                catalog_kwargs = {
-                    name: args[i + 1]
-                    for i, name in enumerate(required_inputs)
-                    if i + 1 < len(args)
-                }
-                return run_component_node(X, reducer_cfg, "reducer", **catalog_kwargs)
-            return reducer_wrapper
-
-        nodes.append(node(
-            func=create_reducer_wrapper(reducer_config, required_catalog_inputs),
-            inputs=inputs,
-            outputs=f"{reducer_key}__output",
-            name=f"{reducer_key}_node",
-            tags=["reducer", reducer_name.lower()]
+            outputs=f"{imputer_key}__output",
+            name=f"{imputer_key}_node",
+            tags=["imputer", imputer_name.lower()]
         ))
 
-        # 3. For each reducer, branch to enabled clusterers
-        for j, clusterer_config in enumerate(clusterers):
-            clusterer_name = clusterer_config["name"]
-            combination_key = f"{reducer_name.lower()}_{clusterer_name.lower()}"
+        # For each imputer, create reducer branches
+        for j, reducer_config in enumerate(reducers):
+            reducer_name = reducer_config["name"]
+            imputer_reducer_key = f"{imputer_name.lower()}_{reducer_name.lower()}"
 
-            # Skip if this combination is not enabled
-            if valid_combinations and (reducer_name, clusterer_name) not in valid_combinations:
-                continue
+            # Check if any clusterer combinations are enabled for this imputer-reducer pair
+            if valid_combinations:
+                pair_has_enabled_combos = any(
+                    combo[0] == imputer_name and combo[1] == reducer_name
+                    for combo in valid_combinations
+                )
+                if not pair_has_enabled_combos:
+                    continue
 
-            combination_tags = [
-                combination_key,
-                reducer_name.lower(),
-                clusterer_name.lower(),
-                "combination"
-            ]
-
-            # Scaler node
-            scaler_config = shared_stages.get("scaler", {})
-            if scaler_config:
-                required_catalog_inputs = _extract_input_parameters(scaler_config)
-                inputs = [f"{reducer_key}__output"]
-                inputs.extend(required_catalog_inputs)
-
-                def create_scaler_wrapper(scaler_cfg, required_inputs):
-                    def scaler_wrapper(*args):
-                        X = args[0]
-                        catalog_kwargs = {
-                            name: args[i + 1]
-                            for i, name in enumerate(required_inputs)
-                            if i + 1 < len(args)
-                        }
-                        return run_component_node(X, scaler_cfg, "scaler", **catalog_kwargs)
-                    return scaler_wrapper
-
-                nodes.append(node(
-                    func=create_scaler_wrapper(scaler_config, required_catalog_inputs),
-                    inputs=inputs,
-                    outputs=f"{combination_key}__scaler_output",
-                    name=f"{combination_key}_scaler_node",
-                    tags=combination_tags + ["scaler"]
-                ))
-                scaler_output = f"{combination_key}__scaler_output"
-            else:
-                scaler_output = f"{reducer_key}__output"
-
-            # Filter node
-            filter_config = shared_stages.get("filter", {})
-            if filter_config:
-                required_catalog_inputs = _extract_input_parameters(filter_config)
-                inputs = [scaler_output]
-                inputs.extend(required_catalog_inputs)
-
-                def create_filter_wrapper(filter_cfg, required_inputs):
-                    def filter_wrapper(*args):
-                        X = args[0]
-                        catalog_kwargs = {
-                            name: args[i + 1]
-                            for i, name in enumerate(required_inputs)
-                            if i + 1 < len(args)
-                        }
-                        return run_component_node(X, filter_cfg, "filter", **catalog_kwargs)
-                    return filter_wrapper
-
-                nodes.append(node(
-                    func=create_filter_wrapper(filter_config, required_catalog_inputs),
-                    inputs=inputs,
-                    outputs=f"{combination_key}__filter_output",
-                    name=f"{combination_key}_filter_node",
-                    tags=combination_tags + ["filter"]
-                ))
-                filter_output = f"{combination_key}__filter_output"
-            else:
-                filter_output = scaler_output
-
-            # Clusterer node
-            required_catalog_inputs = _extract_input_parameters(clusterer_config)
-            inputs = [filter_output]
+            # Create reducer node
+            required_catalog_inputs = _extract_input_parameters(reducer_config)
+            inputs = [f"{imputer_key}__output"]
             inputs.extend(required_catalog_inputs)
 
-            def create_clusterer_wrapper(clusterer_cfg, required_inputs):
-                def clusterer_wrapper(*args):
+            def create_reducer_wrapper(reducer_cfg, required_inputs):
+                def reducer_wrapper(*args):
                     X = args[0]
                     catalog_kwargs = {
                         name: args[i + 1]
                         for i, name in enumerate(required_inputs)
                         if i + 1 < len(args)
                     }
-                    return run_component_node(X, clusterer_cfg, "clusterer", **catalog_kwargs)
-                return clusterer_wrapper
+                    return run_component_node(X, reducer_cfg, "reducer", **catalog_kwargs)
+                return reducer_wrapper
 
             nodes.append(node(
-                func=create_clusterer_wrapper(clusterer_config, required_catalog_inputs),
+                func=create_reducer_wrapper(reducer_config, required_catalog_inputs),
                 inputs=inputs,
-                outputs=f"{combination_key}__clusterer_output",
-                name=f"{combination_key}_clusterer_node",
-                tags=combination_tags + ["clusterer"]
+                outputs=f"{imputer_reducer_key}__reducer_output",
+                name=f"{imputer_reducer_key}_reducer_node",
+                tags=["reducer", imputer_name.lower(), reducer_name.lower()]
             ))
 
-            # Add visualization nodes for this combination
-            _add_visualization_nodes(nodes, combination_key, filter_output, combination_tags)
+            # For each imputer-reducer pair, branch to enabled clusterers
+            for k, clusterer_config in enumerate(clusterers):
+                clusterer_name = clusterer_config["name"]
+                combination_key = f"{imputer_name.lower()}_{reducer_name.lower()}_{clusterer_name.lower()}"
 
-            # Add Red-Dwarf dataset generation nodes
-            _add_dataset_generation_nodes(nodes, combination_key, filter_output, combination_tags)
+                # Skip if this combination is not enabled
+                if valid_combinations and (imputer_name, reducer_name, clusterer_name) not in valid_combinations:
+                    continue
+
+                combination_tags = [
+                    combination_key,
+                    imputer_name.lower(),
+                    reducer_name.lower(),
+                    clusterer_name.lower(),
+                    "combination"
+                ]
+
+                # Scaler node
+                scaler_config = shared_stages.get("scaler", {})
+                if scaler_config:
+                    required_catalog_inputs = _extract_input_parameters(scaler_config)
+                    inputs = [f"{imputer_reducer_key}__reducer_output"]
+                    inputs.extend(required_catalog_inputs)
+
+                    def create_scaler_wrapper(scaler_cfg, required_inputs):
+                        def scaler_wrapper(*args):
+                            X = args[0]
+                            catalog_kwargs = {
+                                name: args[i + 1]
+                                for i, name in enumerate(required_inputs)
+                                if i + 1 < len(args)
+                            }
+                            return run_component_node(X, scaler_cfg, "scaler", **catalog_kwargs)
+                        return scaler_wrapper
+
+                    nodes.append(node(
+                        func=create_scaler_wrapper(scaler_config, required_catalog_inputs),
+                        inputs=inputs,
+                        outputs=f"{combination_key}__scaler_output",
+                        name=f"{combination_key}_scaler_node",
+                        tags=combination_tags + ["scaler"]
+                    ))
+                    scaler_output = f"{combination_key}__scaler_output"
+                else:
+                    scaler_output = f"{imputer_reducer_key}__reducer_output"
+
+                # Filter node
+                filter_config = shared_stages.get("filter", {})
+                if filter_config:
+                    required_catalog_inputs = _extract_input_parameters(filter_config)
+                    inputs = [scaler_output]
+                    inputs.extend(required_catalog_inputs)
+
+                    def create_filter_wrapper(filter_cfg, required_inputs):
+                        def filter_wrapper(*args):
+                            X = args[0]
+                            catalog_kwargs = {
+                                name: args[i + 1]
+                                for i, name in enumerate(required_inputs)
+                                if i + 1 < len(args)
+                            }
+                            return run_component_node(X, filter_cfg, "filter", **catalog_kwargs)
+                        return filter_wrapper
+
+                    nodes.append(node(
+                        func=create_filter_wrapper(filter_config, required_catalog_inputs),
+                        inputs=inputs,
+                        outputs=f"{combination_key}__filter_output",
+                        name=f"{combination_key}_filter_node",
+                        tags=combination_tags + ["filter"]
+                    ))
+                    filter_output = f"{combination_key}__filter_output"
+                else:
+                    filter_output = scaler_output
+
+                # Clusterer node
+                required_catalog_inputs = _extract_input_parameters(clusterer_config)
+                inputs = [filter_output]
+                inputs.extend(required_catalog_inputs)
+
+                def create_clusterer_wrapper(clusterer_cfg, required_inputs):
+                    def clusterer_wrapper(*args):
+                        X = args[0]
+                        catalog_kwargs = {
+                            name: args[i + 1]
+                            for i, name in enumerate(required_inputs)
+                            if i + 1 < len(args)
+                        }
+                        return run_component_node(X, clusterer_cfg, "clusterer", **catalog_kwargs)
+                    return clusterer_wrapper
+
+                nodes.append(node(
+                    func=create_clusterer_wrapper(clusterer_config, required_catalog_inputs),
+                    inputs=inputs,
+                    outputs=f"{combination_key}__clusterer_output",
+                    name=f"{combination_key}_clusterer_node",
+                    tags=combination_tags + ["clusterer"]
+                ))
+
+                # Add visualization nodes for this combination
+                _add_visualization_nodes(nodes, combination_key, filter_output, combination_tags)
+
+                # Add Red-Dwarf dataset generation nodes
+                _add_dataset_generation_nodes(nodes, combination_key, filter_output, combination_tags)
 
     return preprocessing_pipeline + Pipeline(nodes)
 
@@ -567,13 +583,28 @@ def _add_dataset_generation_nodes(nodes: list, combination_key: str, filter_outp
     ))
 
     # Generate metadata JSON - we need to find the right reducer config
-    reducer_name = combination_key.split('_')[0]  # Extract reducer name from combination key
+    # For new format: imputer_reducer_clusterer, reducer is the middle part
+    # For old format: reducer_clusterer, reducer is the first part
+    parts = combination_key.split('_')
+    if len(parts) == 3:
+        # New format: imputer_reducer_clusterer
+        reducer_name = parts[1]
+    else:
+        # Old format: reducer_clusterer (backward compatibility)
+        reducer_name = parts[0]
 
     # Create a wrapper that finds the right reducer config
     def create_meta_wrapper(combo_key):
         def meta_wrapper(polis_url, all_reducers):
             # Find the reducer config for this combination
-            reducer_name = combo_key.split('_')[0]
+            parts = combo_key.split('_')
+            if len(parts) == 3:
+                # New format: imputer_reducer_clusterer
+                reducer_name = parts[1]
+            else:
+                # Old format: reducer_clusterer
+                reducer_name = parts[0]
+            
             reducer_config = None
             for reducer in all_reducers:
                 if reducer["name"].lower() == reducer_name:
