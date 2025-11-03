@@ -266,47 +266,55 @@ pipelines:
 branching_pipeline:
   shared_stages:
     filter:
-      name: SampleMaskFilter
+      estimator: SampleMaskFilter
       mask: "input:participant_mask"
 
   imputers:
-    - name: SimpleImputer
+    - name: mean
+      estimator: SimpleImputer
       strategy: mean
-    - name: KNNImputer
+    - name: knn5d
+      estimator: KNNImputer
       n_neighbors: 5
       weights: distance
 
   reducers:
-    - name: PCA
+    - name: pca
+      estimator: PCA
       n_components: 2
       random_state: ${globals:random_state}
       _scaler:
-        name: SparsityAwareScaler
+        estimator: SparsityAwareScaler
         X_sparse: "input:masked_vote_matrix"
-    - name: PaCMAP
+    - name: pacmap
+      estimator: PaCMAP
       n_components: 2
       n_neighbors: null
       random_state: ${globals:random_state}
       _scaler:
-        name: NoOpTransformer
-    - name: LocalMAP
+        estimator: NoOpTransformer
+    - name: localmap
+      estimator: LocalMAP
       n_components: 2
       n_neighbors: null
       random_state: ${globals:random_state}
       _scaler:
-        name: NoOpTransformer
-    - name: UMAP
+        estimator: NoOpTransformer
+    - name: umap
+      estimator: UMAP
       n_components: 2
       n_neighbors: 15
       random_state: ${globals:random_state}
       _scaler:
-        name: NoOpTransformer
+        estimator: NoOpTransformer
 
   clusterers:
-    - name: BestKMeans
+    - name: bestkmeans
+      estimator: BestKMeans
       k_bounds: [2, 5]
       random_state: ${globals:random_state}
-    - name: BestHDBSCANFlat
+    - name: besthdbscan
+      estimator: BestHDBSCANFlat
       k_bounds: [2, 7]
       random_state: ${globals:random_state}
 

@@ -306,12 +306,13 @@ def create_branching_pipeline() -> Pipeline:
     # Create imputer-reducer-clusterer combinations
     for i, imputer_config in enumerate(imputers):
         imputer_name = imputer_config["name"]
+        imputer_estimator = imputer_config["estimator"]
         imputer_key = f"imputer_{imputer_name.lower()}"
 
         # Check if any combinations are enabled for this imputer
         if valid_combinations:
             imputer_has_enabled_combos = any(
-                combo[0] == imputer_name for combo in valid_combinations
+                combo[0] == imputer_estimator for combo in valid_combinations
             )
             if not imputer_has_enabled_combos:
                 continue
@@ -343,12 +344,13 @@ def create_branching_pipeline() -> Pipeline:
         # For each imputer, create reducer branches
         for j, reducer_config in enumerate(reducers):
             reducer_name = reducer_config["name"]
+            reducer_estimator = reducer_config["estimator"]
             imputer_reducer_key = f"{imputer_name.lower()}_{reducer_name.lower()}"
 
             # Check if any clusterer combinations are enabled for this imputer-reducer pair
             if valid_combinations:
                 pair_has_enabled_combos = any(
-                    combo[0] == imputer_name and combo[1] == reducer_name
+                    combo[0] == imputer_estimator and combo[1] == reducer_estimator
                     for combo in valid_combinations
                 )
                 if not pair_has_enabled_combos:
@@ -382,10 +384,11 @@ def create_branching_pipeline() -> Pipeline:
             # For each imputer-reducer pair, branch to enabled clusterers
             for k, clusterer_config in enumerate(clusterers):
                 clusterer_name = clusterer_config["name"]
+                clusterer_estimator = clusterer_config["estimator"]
                 combination_key = f"{imputer_name.lower()}_{reducer_name.lower()}_{clusterer_name.lower()}"
 
                 # Skip if this combination is not enabled
-                if valid_combinations and (imputer_name, reducer_name, clusterer_name) not in valid_combinations:
+                if valid_combinations and (imputer_estimator, reducer_estimator, clusterer_estimator) not in valid_combinations:
                     continue
 
                 combination_tags = [
