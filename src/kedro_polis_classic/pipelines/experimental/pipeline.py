@@ -481,8 +481,9 @@ def create_branching_pipeline() -> Pipeline:
                     tags=combination_tags + ["clusterer"]
                 ))
 
-                # Add visualization nodes for this combination
-                _add_visualization_nodes(nodes, combination_key, filter_output, combination_tags)
+                # Add visualization nodes for this combination (if enabled)
+                generate_plots = config.get("generate_plots", False)
+                _add_visualization_nodes(nodes, combination_key, filter_output, combination_tags, generate_plots)
 
                 # Add Red-Dwarf dataset generation nodes
                 _add_dataset_generation_nodes(nodes, combination_key, filter_output, combination_tags)
@@ -511,8 +512,16 @@ def create_branching_pipeline() -> Pipeline:
     return preprocessing_pipeline + Pipeline(nodes)
 
 
-def _add_visualization_nodes(nodes: list, combination_key: str, filter_output: str, tags: list):
-    """Add visualization nodes for a specific reducer-clusterer combination."""
+def _add_visualization_nodes(nodes: list, combination_key: str, filter_output: str, tags: list, generate_plots: bool = False):
+    """Add visualization nodes for a specific reducer-clusterer combination.
+
+    Args:
+        nodes: List of nodes to append to
+        combination_key: Unique key for this combination
+        filter_output: Output from the filter stage
+        tags: Tags to apply to nodes
+        generate_plots: Whether to generate plot image files (default: False)
+    """
 
     # Original scatter plot colored by cluster
     nodes.append(node(

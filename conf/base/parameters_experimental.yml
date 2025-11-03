@@ -264,6 +264,9 @@ pipelines:
 # each reducer runs once per imputer, and then multiple clusterers run on each
 # imputer-reducer combination's output
 branching_pipeline:
+  # Control whether to generate plot images (false by default to save time)
+  generate_plots: false
+
   shared_stages:
     filter:
       estimator: SampleMaskFilter
