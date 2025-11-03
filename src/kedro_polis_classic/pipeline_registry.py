@@ -21,4 +21,12 @@ def register_pipelines() -> dict[str, Pipeline]:
     for name in experimental_pipeline_names:
         pipelines[name] = experiment_pipeline.create_pipeline(name)
 
+    # Add branching pipeline that creates a DAG structure
+    # This pipeline runs preprocessing once, each reducer once, and clusterers on each reducer output
+    try:
+        pipelines["branching"] = experiment_pipeline.create_branching_pipeline()
+    except ValueError as e:
+        # If branching_pipeline config is not found, skip it
+        print(f"Warning: Skipping branching pipeline - {e}")
+
     return pipelines

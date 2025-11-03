@@ -95,18 +95,22 @@ def filter_pipelines(requested: List[str], available: Set[str]) -> List[str]:
 
 
 def run_pipeline(
-    pipeline_name: str, current: int, total: int, params: str | None = None
+    pipeline_name: str, current: int, total: int, params: str | None = None, tags: str | None = None
 ) -> bool:
     """Run a single pipeline using kedro run command."""
     print(f"\n{'=' * 60}")
     print(f"Running pipeline ({current}/{total}): {pipeline_name}")
     if params:
         print(f"With parameters: {params}")
+    if tags:
+        print(f"With tags: {tags}")
     print(f"{'=' * 60}")
 
     cmd = ["kedro", "run", "--pipeline", pipeline_name]
     if params:
         cmd.extend(["--params", params])
+    if tags:
+        cmd.extend(["--tags", tags])
 
     try:
         result = subprocess.run(cmd, check=True, cwd=Path(__file__).parent.parent)
@@ -156,6 +160,8 @@ Examples:
   uv run python scripts/run_pipelines.py polis,mean_pca_bestkmeans
   uv run python scripts/run_pipelines.py mean_pacmap_kmeans --launch-viz
   uv run python scripts/run_pipelines.py besthdbscanflat --params "param1=value1,param2=value2"
+  uv run python scripts/run_pipelines.py branching --tags "pca_bestkmeans,umap_bestkmeans"
+  uv run python scripts/run_pipelines.py branching --tags "pca,bestkmeans"
         """,
     )
 
@@ -178,6 +184,11 @@ Examples:
         "--params",
         type=str,
         help="Parameters to pass to kedro run (e.g., 'param1:value1,param2:value2')",
+    )
+    parser.add_argument(
+        "--tags",
+        type=str,
+        help="Tags to filter nodes in the pipeline (e.g., 'pca_bestkmeans,umap_bestkmeans' or 'pca,bestkmeans')",
     )
 
     args = parser.parse_args()
@@ -217,7 +228,7 @@ Examples:
 
     total_pipelines = len(pipelines_to_run)
     for i, pipeline in enumerate(pipelines_to_run, 1):
-        success = run_pipeline(pipeline, i, total_pipelines, args.params)
+        success = run_pipeline(pipeline, i, total_pipelines, args.params, args.tags)
         if success:
             successful_runs += 1
         else:

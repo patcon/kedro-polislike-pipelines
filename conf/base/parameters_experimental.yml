@@ -258,3 +258,52 @@ pipelines:
       n_components: 2
       n_neighbors: 15
       random_state: ${globals:random_state}
+
+# Branching pipeline configuration
+# This creates a single DAG where preprocessing runs once, each reducer runs once,
+# and then multiple clusterers run on each reducer's output
+branching_pipeline:
+  shared_stages:
+    imputer:
+      name: SimpleImputer
+      strategy: mean
+    scaler:
+      name: SparsityAwareScaler
+      X_sparse: "input:masked_vote_matrix"
+    filter:
+      name: SampleMaskFilter
+      mask: "input:participant_mask"
+
+  reducers:
+    - name: PCA
+      n_components: 2
+      random_state: ${globals:random_state}
+    - name: PaCMAP
+      n_components: 2
+      n_neighbors: null
+      random_state: ${globals:random_state}
+    - name: LocalMAP
+      n_components: 2
+      n_neighbors: null
+      random_state: ${globals:random_state}
+    - name: UMAP
+      n_components: 2
+      n_neighbors: 15
+      random_state: ${globals:random_state}
+
+  clusterers:
+    - name: BestKMeans
+      k_bounds: [2, 5]
+      random_state: ${globals:random_state}
+    - name: BestHDBSCANFlat
+      k_bounds: [2, 7]
+      random_state: ${globals:random_state}
+
+  # Optional: specify which combinations to build (if not specified, builds all combinations)
+  # enabled_combinations:
+  #   - reducer: PCA
+  #     clusterer: BestKMeans
+  #   - reducer: PaCMAP
+  #     clusterer: BestKMeans
+  #   - reducer: UMAP
+  #     clusterer: BestHDBSCANFlat
