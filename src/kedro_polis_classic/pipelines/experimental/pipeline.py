@@ -354,8 +354,9 @@ def create_branching_pipeline() -> Pipeline:
                 if not pair_has_enabled_combos:
                     continue
 
-            # Create reducer node
-            required_catalog_inputs = _extract_input_parameters(reducer_config)
+            # Create reducer node - exclude parameters starting with underscore (special config keys)
+            reducer_config_clean = {k: v for k, v in reducer_config.items() if not k.startswith("_")}
+            required_catalog_inputs = _extract_input_parameters(reducer_config_clean)
             inputs = [f"{imputer_key}__output"]
             inputs.extend(required_catalog_inputs)
 
@@ -371,7 +372,7 @@ def create_branching_pipeline() -> Pipeline:
                 return reducer_wrapper
 
             nodes.append(node(
-                func=create_reducer_wrapper(reducer_config, required_catalog_inputs),
+                func=create_reducer_wrapper(reducer_config_clean, required_catalog_inputs),
                 inputs=inputs,
                 outputs=f"{imputer_reducer_key}__reducer_output",
                 name=f"{imputer_reducer_key}_reducer_node",
@@ -395,8 +396,8 @@ def create_branching_pipeline() -> Pipeline:
                     "combination"
                 ]
 
-                # Scaler node
-                scaler_config = shared_stages.get("scaler", {})
+                # Scaler node - now get scaler config from the reducer config
+                scaler_config = reducer_config.get("_scaler", {})
                 if scaler_config:
                     required_catalog_inputs = _extract_input_parameters(scaler_config)
                     inputs = [f"{imputer_reducer_key}__reducer_output"]
