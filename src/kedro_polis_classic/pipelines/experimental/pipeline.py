@@ -487,6 +487,15 @@ def create_branching_pipeline() -> Pipeline:
                 # Add Red-Dwarf dataset generation nodes
                 _add_dataset_generation_nodes(nodes, combination_key, filter_output, combination_tags)
 
+    # Add single shared statements JSON node (same for all combinations)
+    nodes.append(node(
+        func=save_statements_json,
+        inputs="raw_comments",
+        outputs="statements_json",
+        name="save_statements_json",
+        tags=["shared", "dataset"]
+    ))
+
     return preprocessing_pipeline + Pipeline(nodes)
 
 
@@ -577,14 +586,8 @@ def _add_dataset_generation_nodes(nodes: list, combination_key: str, filter_outp
         tags=tags + ["dataset"]
     ))
 
-    # Generate statements JSON
-    nodes.append(node(
-        func=save_statements_json,
-        inputs="raw_comments",
-        outputs=f"{combination_key}__statements_json",
-        name=f"{combination_key}_save_statements_json",
-        tags=tags + ["dataset"]
-    ))
+    # Note: statements_json is now shared across all combinations since it's just raw comments
+    # No need to create combination-specific statements JSON nodes
 
     # Generate metadata JSON - we need to find the right reducer config
     # For new format: imputer_reducer_clusterer, reducer is the middle part
