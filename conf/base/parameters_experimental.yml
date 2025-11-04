@@ -276,10 +276,32 @@ branching_pipeline:
     - name: mean
       estimator: SimpleImputer
       strategy: mean
+    - name: zero
+      estimator: SimpleImputer
+      strategy: constant
+      fill_value: 0
+    - name: median
+      estimator: SimpleImputer
+      strategy: median
+    - name: mode
+      estimator: SimpleImputer
+      strategy: most_frequent
     - name: knn5d
       estimator: KNNImputer
       n_neighbors: 5
       weights: distance
+    - name: knn5u
+      estimator: KNNImputer
+      n_neighbors: 5
+      weights: uniform
+    - name: knn10d
+      estimator: KNNImputer
+      n_neighbors: 10
+      weights: distance
+    - name: knn10u
+      estimator: KNNImputer
+      n_neighbors: 10
+      weights: uniform
 
   reducers:
     - name: pca
