@@ -342,6 +342,8 @@ branching_pipeline:
       estimator: BestHDBSCANFlat
       k_bounds: [2, 7]
       random_state: ${globals:random_state}
+    - name: hdbscan
+      estimator: HDBSCAN
 
   # Optional: specify which combinations to build (if not specified, builds all combinations)
   # New format supports imputer-reducer-clusterer combinations:
