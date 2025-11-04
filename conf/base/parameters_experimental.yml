@@ -340,10 +340,15 @@ branching_pipeline:
       random_state: ${globals:random_state}
     - name: besthdbscan
       estimator: BestHDBSCANFlat
+      # cluster_selection_method: leaf # Uncommenting gets around occasional error in HDBSCAN_flat
       k_bounds: [2, 7]
       random_state: ${globals:random_state}
-    - name: hdbscan
+    - name: hdbscan_eom
       estimator: HDBSCAN
+      cluster_selection_method: eom
+    - name: hdbscan_leaf
+      estimator: HDBSCAN
+      cluster_selection_method: leaf
 
   # Optional: specify which combinations to build (if not specified, builds all combinations)
   # New format supports imputer-reducer-clusterer combinations:
