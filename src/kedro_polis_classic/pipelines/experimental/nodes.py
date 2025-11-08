@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
-from ..polis_legacy.utils import ensure_series
+from kedro_polis_classic.utils import ensure_series
 import logging
 
 logger = logging.getLogger(__name__)
