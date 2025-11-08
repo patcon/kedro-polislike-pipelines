@@ -32,24 +32,28 @@ def create_pipeline() -> Pipeline:
             ],
             outputs="raw_data",
             name="load_polis_data",
+            tags=["base", "preprocessing", "shared", "data_loading"]
         ),
         node(
             func=split_raw_data,
             inputs="raw_data",
             outputs=["raw_votes", "raw_comments"],
             name="split_raw_data",
+            tags=["base", "preprocessing", "shared", "data_loading"]
         ),
         node(
             func=dedup_votes,
             inputs="raw_votes",
             outputs="deduped_votes",
             name="dedup_votes",
+            tags=["base", "preprocessing", "shared", "data_cleaning"]
         ),
         node(
             func=make_raw_vote_matrix,
             inputs="deduped_votes",
             outputs="raw_vote_matrix",
             name="make_raw_vote_matrix",
+            tags=["base", "preprocessing", "shared", "matrix_creation"]
         ),
         # Preprocessing nodes
         node(
@@ -57,18 +61,21 @@ def create_pipeline() -> Pipeline:
             inputs=["raw_vote_matrix", "params:min_votes_threshold"],
             outputs="participant_mask",
             name="make_participant_mask",
+            tags=["base", "preprocessing", "shared", "masking"]
         ),
         node(
             func=make_statement_mask,
             inputs=["raw_comments"],
             outputs="statement_mask",
             name="make_statement_mask",
+            tags=["base", "preprocessing", "shared", "masking"]
         ),
         node(
             func=make_masked_vote_matrix,
             inputs=["raw_vote_matrix", "statement_mask"],
             outputs="masked_vote_matrix",
             name="make_masked_vote_matrix",
+            tags=["base", "preprocessing", "shared", "matrix_creation"]
         ),
     ]
 

@@ -1,7 +1,95 @@
-# Experimental pipeline catalog entries
+# Preprocessing datasets (needed by all pipelines)
+raw_data:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: raw
+
+raw_votes:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/votes.csv
+  save_args:
+    index: false
+  metadata:
+    kedro-viz:
+      layer: raw
+
+raw_comments:
+  type: kedro_polislike_pipelines.datasets.pandas.CustomCSVDataset
+  filepath: data/01_raw/comments.csv
+  save_args:
+    index: false
+  load_args:
+    index_col: statement_id
+  metadata:
+    index_in_preview: true
+    kedro-viz:
+      layer: raw
+
+deduped_votes:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: primary
+
+raw_vote_matrix:
+  type: kedro_polislike_pipelines.datasets.pandas.CustomCSVDataset
+  filepath: data/03_primary/raw_vote_matrix.csv
+  metadata:
+    index_in_preview: true
+    save_load_index: true
+    kedro-viz:
+      layer: primary
+
+raw_participants_meta:
+  type: kedro_polislike_pipelines.datasets.pandas.CustomCSVDataset
+  filepath: data/03_primary/raw_participants_meta.csv
+  metadata:
+    index_in_preview: true
+    save_load_index: true
+    kedro-viz:
+      layer: primary
+
+participant_filter_mask:
+  type: kedro_polislike_pipelines.datasets.pandas.CustomCSVDataset
+  filepath: data/02_intermediate/participant_filter_mask.csv
+  metadata:
+    index_in_preview: true
+    save_load_index: true
+    kedro-viz:
+      layer: primary
+
+participant_mask:
+  type: kedro_polislike_pipelines.datasets.pandas.CustomCSVDataset
+  filepath: data/02_intermediate/participant_mask.csv
+  metadata:
+    index_in_preview: true
+    save_load_index: true
+    kedro-viz:
+      layer: primary
+
+statement_mask:
+  type: kedro_polislike_pipelines.datasets.pandas.CustomCSVDataset
+  filepath: data/02_intermediate/statement_mask.csv
+  metadata:
+    index_in_preview: true
+    save_load_index: true
+    kedro-viz:
+      layer: primary
+
+masked_vote_matrix:
+  type: kedro_polislike_pipelines.datasets.pandas.CustomCSVDataset
+  filepath: data/03_primary/masked_vote_matrix.csv
+  metadata:
+    index_in_preview: true
+    save_load_index: true
+    kedro-viz:
+      layer: primary
+
+# Pipeline-specific catalog entries
 # Each pipeline gets its own directory structure using {pipeline_name} templating
 
-# Intermediate outputs from each step of the experimental pipeline
+# Intermediate outputs from each step of the pipeline
 # These are kept as MemoryDatasets since they're numpy arrays, not DataFrames
 "{pipeline_name}__imputer_output":
   type: MemoryDataset

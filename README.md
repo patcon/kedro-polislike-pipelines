@@ -41,28 +41,112 @@ surfacing complexity in the groups that agree/disagree together.
 
 ## Usage
 
+The project uses a **branching pipeline** that runs multiple imputer-reducer-clusterer combinations efficiently by sharing intermediate results. This creates a single DAG where preprocessing runs once, and then multiple algorithm combinations branch from the shared preprocessing output.
+
+### Quick Start
+
 ```bash
-# Build static site
-uv run make build
-# or: make build
+# 1. Run the full pipeline (675 tasks - all combinations)
+make run-pipelines PARAMS="polis_url=https://pol.is/report/r3vumzb3w4zccaty6vcan"
 
-# Run all pipelines
-uv run make run-pipelines
-# or: make run-pipelines
+# 2. Build the static visualization site
+make build-viz POLIS_URL="https://pol.is/report/r3vumzb3w4zccaty6vcan"
 
-# Run specific pipelines with parameters
-uv run make run-pipelines PIPELINES=bestkmeans PARAMS="polis_id=r29kkytnipymd3exbynkd"
-# or: make run-pipelines PIPELINES=bestkmeans PARAMS="polis_id=r29kkytnipymd3exbynkd"
-
-# Start development server
-uv run make dev
-# or: make dev
-
-# Serve build directory
-uv run make serve
-# or: make serve
-
-# Show help
-make
-# or: make help
+# 3. Serve the site locally
+make serve-viz
+# Visit: http://localhost:8000
 ```
+
+### Pipeline Execution
+
+#### Full Pipeline
+```bash
+# Run all combinations (675 tasks, ~2-3 minutes)
+make run-pipelines PARAMS="polis_url=https://pol.is/report/r3vumzb3w4zccaty6vcan"
+```
+
+#### Tag-Based Filtering
+**⚠️ Important**: Tag filtering in Kedro only runs nodes with matching tags. For complex pipelines with dependencies, this can cause execution failures if prerequisite nodes are missing.
+
+```bash
+# Run only preprocessing + shared dataset nodes (9 tasks, ~5 seconds)
+make run-pipelines TAGS="base" PARAMS="polis_url=https://pol.is/report/r3vumzb3w4zccaty6vcan"
+
+# Run preprocessing + all "mean" imputer combinations (100 tasks, ~30 seconds)
+make run-pipelines TAGS="mean" PARAMS="polis_url=https://pol.is/report/r3vumzb3w4zccaty6vcan"
+```
+
+**Available Tags:**
+- **Stage tags**: `imputer`, `reducer`, `scaler`, `filter`, `clusterer`
+- **Component tags**: `mean`, `median`, `zero`, `knn5d`, `pca`, `umap`, `pacmap`, `localmap`, `bestkmeans`, `besthdbscan`
+- **Combination tags**: `mean_pca_bestkmeans`, `zero_pacmap_masked_bestkmeans`, etc.
+- **Special tags**: `base` (preprocessing + shared), `shared` (dataset generation), `visualization`
+
+### Build & Serve Workflow
+
+#### Building the Static Site
+```bash
+# Build Kedro Viz static site with data
+make build-viz POLIS_URL="https://pol.is/report/r3vumzb3w4zccaty6vcan"
+
+# Alternative: using Polis ID instead of full URL
+make build-viz POLIS_ID="r3vumzb3w4zccaty6vcan"
+```
+
+#### Serving the Site
+```bash
+# Serve the built site with CORS support
+make serve-viz
+# Visit: http://localhost:8000
+
+# The site includes:
+# - Interactive Kedro Viz pipeline visualization
+# - All generated data files and outputs
+# - Scatter plots and projections for each combination
+```
+
+### Development Commands
+
+```bash
+# Start Kedro Viz development server (live pipeline view)
+make dev
+# Visit: http://localhost:4141
+
+# Show all available make commands
+make help
+```
+
+### Performance Comparison
+
+| Command | Tasks | Time | Use Case |
+|---------|-------|------|----------|
+| Full pipeline | 675 | ~2-3 min | Complete analysis of all combinations |
+| `TAGS="base"` | 9 | ~5 sec | Just preprocessing + shared data |
+| `TAGS="mean"` | 100 | ~30 sec | All combinations with mean imputation |
+| `TAGS="pca"` | ~150 | ~45 sec | All combinations with PCA reduction |
+
+### Troubleshooting
+
+#### Tag Filtering Issues
+If you get `DatasetError: Data for MemoryDataset has not been saved yet`, it means the filtered tags don't include all necessary dependencies. Solutions:
+
+1. **Use broader tags**: Instead of specific combinations, use component tags like `mean`, `pca`, `bestkmeans`
+2. **Include base preprocessing**: Always include `base` tag when filtering: `TAGS="base,your_tags"`
+3. **Run full pipeline first**: Some tag combinations work better after a full pipeline run
+
+#### Build Issues
+```bash
+# If build fails, reset configuration
+make reset-tmp-build-config
+
+# Check if data directory exists
+ls -la data/
+
+# Verify Polis URL is accessible
+curl -I "https://pol.is/report/r3vumzb3w4zccaty6vcan"
+```
+
+#### Common Errors
+- **Missing POLIS_URL**: Ensure you provide either `POLIS_URL` or `POLIS_ID` for build commands
+- **Port conflicts**: If port 8000 is busy, the serve command will show an error
+- **Memory issues**: Large datasets may require more RAM; consider filtering to specific combinations

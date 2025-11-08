@@ -50,7 +50,7 @@ reset-tmp-build-config: ## Reset temporary build config to null in base globals
 	@rm -f conf/base/globals.yml.bak
 	@echo "✅ Temporary build configuration reset to null in conf/base/globals.yml"
 
-build: ## Build static site in build directory (requires POLIS_ID or POLIS_URL env var)
+build-viz: ## Build static site in build directory (requires POLIS_ID or POLIS_URL env var)
 	@echo "🏗️  Building static site..."
 	@mkdir -p build
 	@$(MAKE) set-tmp-build-config
@@ -63,13 +63,17 @@ build: ## Build static site in build directory (requires POLIS_ID or POLIS_URL e
 	python scripts/fix_api_paths.py
 	@echo "✅ Build completed! Static site ready in build/ directory"
 
-serve: ## Serve the build directory with Python HTTP server (with CORS headers)
+build: build-viz # Alias for build-viz (for backward compatibility)
+
+serve-viz: ## Serve the build directory with Python HTTP server (with CORS headers)
 	@echo "🌐 Starting HTTP server for build directory with CORS support..."
 	@if [ ! -d "build" ]; then \
-		echo "❌ Build directory not found. Run 'make build' first."; \
+		echo "❌ Build directory not found. Run 'make build-viz' first."; \
 		exit 1; \
 	fi
 	python scripts/serve_with_cors.py
+
+serve: serve-viz # Alias for serve-viz (for backward compatibility)
 
 # Legacy targets for backward compatibility
 set-build-polis-id: set-tmp-build-config # Legacy alias for set-tmp-build-config
@@ -77,7 +81,7 @@ reset-build-polis-id: reset-tmp-build-config # Legacy alias for reset-tmp-build-
 set-build-polis-url: set-tmp-build-config # Legacy alias for set-tmp-build-config
 reset-build-polis-url: reset-tmp-build-config # Legacy alias for reset-tmp-build-config
 
-.PHONY: help build run-pipelines dev serve
+.PHONY: help build build-viz run-pipelines dev serve serve-viz
 
 help:
 	@echo 'Usage: make <command>'
