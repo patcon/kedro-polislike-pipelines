@@ -315,6 +315,13 @@ branching_pipeline:
       _scaler:
         estimator: SparsityAwareScaler
         X_sparse: "input:masked_vote_matrix"
+    - name: pca_no_scale
+      estimator: PCA
+      n_components: 2
+      random_state: ${globals:random_state}
+      _include_in_full_matrix: false # Just to see effects of skipping SparsityAwareScaler
+      _scaler:
+        estimator: NoOpTransformer
     - name: pacmap
       estimator: PaCMAP
       n_components: 2
@@ -377,3 +384,10 @@ branching_pipeline:
       imputer: noop           # zero imputation happens within the custom PaCMAP estimator
       reducer: pacmap_masked  # PaCMAP with masked distance
       clusterer: bestkmeans   # simple clustering
+
+    mean_pca_bestkmeans_missing_transforms:
+      name: mean_pca_bestkmeans_missing_transforms
+      active: true
+      imputer: mean           # SimpleImputer with mean strategy
+      reducer: pca_no_scale   # PCA without scaling (NoOpTransformer)
+      clusterer: bestkmeans   # BestKMeans clustering
