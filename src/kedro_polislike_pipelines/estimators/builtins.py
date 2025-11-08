@@ -92,7 +92,7 @@ def kmeans_clusterer_factory(**kwargs):
 
 @EstimatorRegistry.register("BestKMeans")
 def best_kmeans_clusterer_factory(**kwargs):
-    from kedro_polis_classic.sklearn.cluster import BestKMeans
+    from kedro_polislike_pipelines.sklearn.cluster import BestKMeans
 
     defaults: dict = dict()
     defaults.update(kwargs)

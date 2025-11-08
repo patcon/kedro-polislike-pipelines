@@ -2,12 +2,12 @@
 """
 Script to replace absolute file paths with relative paths in API response files.
 
-This script finds all instances of '/Users/patcon/repos/kedro-polis-pipelines/'
+This script finds all instances of '/Users/patcon/repos/kedro-polislike-pipelines/'
 in JSON files within the build/api/ directory and replaces them with empty string
 to make the paths relative.
 
 Example:
-  Before: "/Users/patcon/repos/kedro-polis-pipelines/data/6carwc4nzj/knn5d_pca_bestkmeans/03_primary/projections.json"
+  Before: "/Users/patcon/repos/kedro-polislike-pipelines/data/6carwc4nzj/knn5d_pca_bestkmeans/03_primary/projections.json"
   After:  "data/6carwc4nzj/knn5d_pca_bestkmeans/03_primary/projections.json"
 """
 

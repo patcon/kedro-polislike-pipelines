@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Script to run Kedro pipelines with filtering and visualization options.
+Script to run the default Kedro pipeline with tag filtering and visualization options.
 
 Usage:
-    uv run python scripts/run_pipelines.py --all [--launch-viz]
-    uv run python scripts/run_pipelines.py pipeline1,pipeline2 [--launch-viz]
-    uv run python scripts/run_pipelines.py pattern [--params "key1=value1,key2=value2"]
+    uv run python scripts/run_pipelines.py [--tags "tag1,tag2"] [--launch-viz]
+    uv run python scripts/run_pipelines.py --tags "pca,bestkmeans" [--params "key1=value1,key2=value2"]
 """
 
 import argparse
@@ -27,86 +26,38 @@ def get_available_pipelines() -> Set[str]:
         bootstrap_project(project_path)
 
         # Import and get pipelines
-        from kedro_polis_classic.pipeline_registry import register_pipelines
+        from kedro_polislike_pipelines.pipeline_registry import register_pipelines
 
         pipelines = register_pipelines()
-        # Filter out __default__ as it's typically an alias
-        available = {name for name in pipelines.keys() if name != "__default__"}
-        return available
+        # Return the default pipeline name
+        return {"__default__"}
 
     except Exception as e:
         print(f"Error getting available pipelines: {e}")
         print("Falling back to configuration-based discovery...")
 
-        # Fallback: read from configuration
-        try:
-            config_loader = OmegaConfigLoader(
-                conf_source="conf", base_env="base", default_run_env="local"
-            )
-            params = config_loader["parameters"]
-            experimental_names = set(params.get("pipelines", {}).keys())
-            # Add known base pipelines
-            base_pipelines = {"polis", "polis_classic"}
-            return base_pipelines.union(experimental_names)
-        except Exception as fallback_e:
-            print(f"Fallback also failed: {fallback_e}")
-            return set()
+        # Fallback: return default pipeline
+        return {"__default__"}
 
 
-def filter_pipelines(requested: List[str], available: Set[str]) -> List[str]:
-    """Filter requested pipelines against available ones, supporting pattern matching."""
-    if not available:
-        print(
-            "Warning: Could not determine available pipelines. Proceeding with requested pipelines."
-        )
-        return requested
-
-    valid_pipelines = []
-    unmatched_patterns = []
-
-    for pattern in requested:
-        # First try exact match
-        if pattern in available:
-            valid_pipelines.append(pattern)
-        else:
-            # Try pattern matching (substring match)
-            matches = [p for p in available if pattern in p]
-            if matches:
-                valid_pipelines.extend(matches)
-                print(f"Pattern '{pattern}' matched: {', '.join(sorted(matches))}")
-            else:
-                unmatched_patterns.append(pattern)
-
-    if unmatched_patterns:
-        print(
-            f"Warning: The following patterns had no matches: {', '.join(unmatched_patterns)}"
-        )
-        print(f"Available pipelines: {', '.join(sorted(available))}")
-
-    # Remove duplicates while preserving order
-    seen = set()
-    unique_pipelines = []
-    for pipeline in valid_pipelines:
-        if pipeline not in seen:
-            seen.add(pipeline)
-            unique_pipelines.append(pipeline)
-
-    return unique_pipelines
+def get_default_pipeline() -> str:
+    """Get the default pipeline name."""
+    return "__default__"
 
 
 def run_pipeline(
-    pipeline_name: str, current: int, total: int, params: str | None = None, tags: str | None = None
+    pipeline_name: str, params: str | None = None, tags: str | None = None
 ) -> bool:
-    """Run a single pipeline using kedro run command."""
+    """Run the default pipeline using kedro run command."""
     print(f"\n{'=' * 60}")
-    print(f"Running pipeline ({current}/{total}): {pipeline_name}")
+    print(f"Running pipeline: {pipeline_name}")
     if params:
         print(f"With parameters: {params}")
     if tags:
         print(f"With tags: {tags}")
     print(f"{'=' * 60}")
 
-    cmd = ["kedro", "run", "--pipeline", pipeline_name]
+    cmd = ["kedro", "run"]
     if params:
         cmd.extend(["--params", params])
     if tags:
@@ -151,34 +102,23 @@ def launch_viz() -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run Kedro pipelines with filtering and visualization options",
+        description="Run the default Kedro pipeline with tag filtering and visualization options",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  uv run python scripts/run_pipelines.py --all
-  uv run python scripts/run_pipelines.py --all --launch-viz
-  uv run python scripts/run_pipelines.py polis,mean_pca_bestkmeans
-  uv run python scripts/run_pipelines.py mean_pacmap_kmeans --launch-viz
-  uv run python scripts/run_pipelines.py besthdbscanflat --params "param1=value1,param2=value2"
-  uv run python scripts/run_pipelines.py branching --tags "pca_bestkmeans,umap_bestkmeans"
-  uv run python scripts/run_pipelines.py branching --tags "pca,bestkmeans"
+  uv run python scripts/run_pipelines.py
+  uv run python scripts/run_pipelines.py --launch-viz
+  uv run python scripts/run_pipelines.py --tags "pca,bestkmeans"
+  uv run python scripts/run_pipelines.py --tags "pca_bestkmeans,umap_bestkmeans" --launch-viz
+  uv run python scripts/run_pipelines.py --tags "bestkmeans" --params "param1=value1,param2=value2"
         """,
-    )
-
-    # Pipeline selection arguments (mutually exclusive)
-    pipeline_group = parser.add_mutually_exclusive_group(required=True)
-    pipeline_group.add_argument(
-        "--all", action="store_true", help="Run all available pipelines"
-    )
-    pipeline_group.add_argument(
-        "pipelines", nargs="?", help="Comma-separated list of pipeline names to run"
     )
 
     # Optional flags
     parser.add_argument(
         "--launch-viz",
         action="store_true",
-        help="Launch Kedro Viz after running pipelines",
+        help="Launch Kedro Viz after running the pipeline",
     )
     parser.add_argument(
         "--params",
@@ -188,75 +128,41 @@ Examples:
     parser.add_argument(
         "--tags",
         type=str,
-        help="Tags to filter nodes in the pipeline (e.g., 'pca_bestkmeans,umap_bestkmeans' or 'pca,bestkmeans')",
+        help="Comma-separated tags to filter nodes in the pipeline (e.g., 'pca_bestkmeans,umap_bestkmeans' or 'pca,bestkmeans')",
     )
 
     args = parser.parse_args()
 
-    # Get available pipelines
-    print("Discovering available pipelines...")
-    available_pipelines = get_available_pipelines()
+    # Get the default pipeline
+    pipeline_name = get_default_pipeline()
+    print(f"Running default pipeline: {pipeline_name}")
+    
+    if args.tags:
+        print(f"With tags: {args.tags}")
+    if args.params:
+        print(f"With parameters: {args.params}")
 
-    if available_pipelines:
-        print(
-            f"Found {len(available_pipelines)} available pipelines: {', '.join(sorted(available_pipelines))}"
-        )
-    else:
-        print("Could not discover available pipelines automatically.")
-
-    # Determine which pipelines to run
-    if args.all:
-        if not available_pipelines:
-            print("❌ Error: Cannot run all pipelines - pipeline discovery failed.")
-            sys.exit(1)
-        pipelines_to_run = sorted(available_pipelines)
-        print(f"\nRunning ALL pipelines: {', '.join(pipelines_to_run)}")
-    else:
-        requested_pipelines = [p.strip() for p in args.pipelines.split(",")]
-        pipelines_to_run = filter_pipelines(requested_pipelines, available_pipelines)
-
-        if not pipelines_to_run:
-            print("❌ Error: No valid pipelines to run.")
-            sys.exit(1)
-
-        print(f"\nRunning selected pipelines: {', '.join(pipelines_to_run)}")
-
-    # Run pipelines
-    successful_runs = 0
-    failed_runs = 0
-    failed_pipelines = []
-
-    total_pipelines = len(pipelines_to_run)
-    for i, pipeline in enumerate(pipelines_to_run, 1):
-        success = run_pipeline(pipeline, i, total_pipelines, args.params, args.tags)
-        if success:
-            successful_runs += 1
-        else:
-            failed_runs += 1
-            failed_pipelines.append(pipeline)
+    # Run the pipeline
+    success = run_pipeline(pipeline_name, args.params, args.tags)
 
     # Summary
     print(f"\n{'=' * 60}")
     print("EXECUTION SUMMARY")
     print(f"{'=' * 60}")
-    print(f"✅ Successful: {successful_runs}")
-    print(f"❌ Failed: {failed_runs}")
-    print(f"📊 Total: {successful_runs + failed_runs}")
-
-    if failed_pipelines:
-        print(f"\n❌ Failed pipelines:")
-        for pipeline in failed_pipelines:
-            print(f"   • {pipeline}")
+    if success:
+        print("✅ Pipeline completed successfully!")
+    else:
+        print("❌ Pipeline failed!")
 
     # Launch viz if requested
     if args.launch_viz:
         launch_viz()
 
     # Exit with appropriate code
-    if failed_runs > 0:
+    if not success:
         sys.exit(1)
     else:
-        print("\n🎉 All pipelines completed successfully!")
+        print("\n🎉 Pipeline completed successfully!")
 
 
 if __name__ == "__main__":

@@ -1,23 +1,23 @@
 # Kedro Polis Pipelines Makefile
 # Based on the original Makefile structure with targets for build, run-pipelines, and dev
 
-run-pipelines: ## Run the pipeline script (use PIPELINES= and PARAMS= env vars)
-	@echo "🚀 Running Kedro pipelines..."
-	@if [ -n "$(PIPELINES)" ]; then \
+run-pipelines: ## Run the default pipeline (use TAGS= and PARAMS= env vars)
+	@echo "🚀 Running default Kedro pipeline..."
+	@if [ -n "$(TAGS)" ]; then \
 		if [ -n "$(PARAMS)" ]; then \
-			echo "Running pipelines: $(PIPELINES) with params: $(PARAMS)"; \
-			python scripts/run_pipelines.py $(PIPELINES) --params "$(PARAMS)"; \
+			echo "Running pipeline with tags: $(TAGS) and params: $(PARAMS)"; \
+			python scripts/run_pipelines.py --tags "$(TAGS)" --params "$(PARAMS)"; \
 		else \
-			echo "Running pipelines: $(PIPELINES)"; \
-			python scripts/run_pipelines.py $(PIPELINES); \
+			echo "Running pipeline with tags: $(TAGS)"; \
+			python scripts/run_pipelines.py --tags "$(TAGS)"; \
 		fi; \
 	else \
 		if [ -n "$(PARAMS)" ]; then \
-			echo "Running all pipelines with params: $(PARAMS)"; \
-			python scripts/run_pipelines.py --all --params "$(PARAMS)"; \
+			echo "Running pipeline with params: $(PARAMS)"; \
+			python scripts/run_pipelines.py --params "$(PARAMS)"; \
 		else \
-			echo "Running all pipelines"; \
-			python scripts/run_pipelines.py --all; \
+			echo "Running default pipeline"; \
+			python scripts/run_pipelines.py; \
 		fi; \
 	fi
 

@@ -1,158 +1,131 @@
-raw_data:
+# Experimental pipeline catalog entries
+# Each pipeline gets its own directory structure using {pipeline_name} templating
+
+# Intermediate outputs from each step of the experimental pipeline
+# These are kept as MemoryDatasets since they're numpy arrays, not DataFrames
+"{pipeline_name}__imputer_output":
   type: MemoryDataset
   metadata:
     kedro-viz:
-      layer: raw
+      layer: feature
 
-raw_votes:
+"{pipeline_name}__reducer_output":
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+"{pipeline_name}__scaler_output":
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+"{pipeline_name}__filter_output":
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+"{pipeline_name}__clusterer_output":
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: model_output
+
+# Final outputs
+"{pipeline_name}__labels_dataframe":
   type: pandas.CSVDataset
-  filepath: data/01_raw/votes.csv
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/{pipeline_name}/03_primary/labels.csv
   save_args:
     index: false
   metadata:
     kedro-viz:
-      layer: raw
-
-raw_comments:
-  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/01_raw/comments.csv
-  save_args:
-    index: false
-  load_args:
-    index_col: statement_id
-  metadata:
-    index_in_preview: true
-    kedro-viz:
-      layer: raw
-
-deduped_votes:
-  type: MemoryDataset
-  metadata:
-    kedro-viz:
       layer: primary
 
-raw_vote_matrix:
-  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/03_primary/raw_vote_matrix.csv
-  metadata:
-    index_in_preview: true
-    save_load_index: true
-    kedro-viz:
-      layer: primary
-
-raw_participants_meta:
-  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/03_primary/raw_participants_meta.csv
-  metadata:
-    index_in_preview: true
-    save_load_index: true
-    kedro-viz:
-      layer: primary
-
-participant_filter_mask:
-  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/02_intermediate/participant_filter_mask.csv
-  metadata:
-    index_in_preview: true
-    save_load_index: true
-    kedro-viz:
-      layer: primary
-
-# TODO: Allow this to be commented out without breaking pipeline.
-participant_mask:
-  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/02_intermediate/participant_mask.csv
-  metadata:
-    index_in_preview: true
-    save_load_index: true
-    kedro-viz:
-      layer: primary
-
-statement_mask:
-  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/02_intermediate/statement_mask.csv
-  metadata:
-    index_in_preview: true
-    save_load_index: true
-    kedro-viz:
-      layer: primary
-
-masked_vote_matrix:
-  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/03_primary/masked_vote_matrix.csv
-  metadata:
-    index_in_preview: true
-    save_load_index: true
-    kedro-viz:
-      layer: primary
-
-vote_heatmap_fig:
+"{pipeline_name}__scatter_plot":
   type: plotly.JSONDataset
-  filepath: data/08_reporting/vote_heatmap.json
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/{pipeline_name}/08_reporting/scatter_plot.json
   metadata:
     kedro-viz:
       layer: reporting
 
-# PCA Subpipeline Datasets
-imputed_vote_matrix:
-  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/04_feature/imputed_vote_matrix.csv
-  metadata:
-    index_in_preview: true
-    save_load_index: true
-    kedro-viz:
-      layer: pca
-
-pca_components:
-  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/05_model_input/pca_components.csv
-  metadata:
-    index_in_preview: true
-    save_load_index: true
-    kedro-viz:
-      layer: pca
-
-scaled_pca_components:
-  type: kedro_polis_classic.datasets.pandas.CustomCSVDataset
-  filepath: data/04_feature/scaled_pca_components.csv
-  metadata:
-    index_in_preview: true
-    save_load_index: true
-    kedro-viz:
-      layer: pca
-
-pca_scatter_fig_pids:
+"{pipeline_name}__scatter_plot_by_participant_id":
   type: plotly.JSONDataset
-  filepath: data/08_reporting/pca_scatter_plot_pids.json
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/{pipeline_name}/08_reporting/scatter_plot_by_participant_id.json
   metadata:
     kedro-viz:
       layer: reporting
 
-pca_scatter_fig_vote_counts:
+"{pipeline_name}__scatter_plot_by_vote_proportions":
   type: plotly.JSONDataset
-  filepath: data/08_reporting/pca_scatter_plot_vote_counts.json
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/{pipeline_name}/08_reporting/scatter_plot_by_vote_proportions.json
   metadata:
     kedro-viz:
       layer: reporting
 
-polismath_json:
+"{pipeline_name}__scatter_plot_image_path":
+  type: text.TextDataset
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/{pipeline_name}/08_reporting/scatter_plot_image_path.txt
+  metadata:
+    kedro-viz:
+      layer: reporting
+
+"{pipeline_name}__scatter_plot_by_participant_id_image_path":
+  type: text.TextDataset
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/{pipeline_name}/08_reporting/scatter_plot_by_participant_id_image_path.txt
+  metadata:
+    kedro-viz:
+      layer: reporting
+
+"{pipeline_name}__scatter_plot_by_vote_proportions_image_path":
+  type: text.TextDataset
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/{pipeline_name}/08_reporting/scatter_plot_by_vote_proportions_image_path.txt
+  metadata:
+    kedro-viz:
+      layer: reporting
+
+# Red-Dwarf minimal dataset outputs
+"{pipeline_name}__votes_parquet":
+  type: pandas.ParquetDataset
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/{pipeline_name}/03_primary/votes.parquet
+  metadata:
+    kedro-viz:
+      layer: primary
+
+"{pipeline_name}__projections_json":
   type: json.JSONDataset
-  filepath: data/08_reporting/polismath.json
-  metadata:
-    kedro-viz:
-      layer: reporting
-
-labels:
-  type: MemoryDataset
-
-labels_dataframe:
-  type: pandas.CSVDataset
-  filepath: data/03_primary/labels.csv
-  save_args:
-    index: false
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/{pipeline_name}/03_primary/projections.json
   metadata:
     kedro-viz:
       layer: primary
-      preview_args:
-        nrows: 10
-# Note: Experimental pipeline catalog entries have been moved to catalog_experimental.yml
+
+# Shared statements JSON - same across all pipelines since it's just raw comments
+statements_json:
+  type: json.JSONDataset
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/shared/statements.json
+  metadata:
+    kedro-viz:
+      layer: primary
+
+# Shared votes parquet - same across all pipelines since it only depends on raw_vote_matrix and participant_mask
+votes_parquet:
+  type: pandas.ParquetDataset
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/shared/votes.parquet
+  metadata:
+    kedro-viz:
+      layer: primary
+
+"{pipeline_name}__meta_json":
+  type: json.JSONDataset
+  filepath: data/${extract_polis_id:${runtime_params:polis_url, ${globals:build_polis_url}}, ${runtime_params:polis_id, ${globals:build_polis_id}}}/{pipeline_name}/03_primary/meta.json
+  metadata:
+    kedro-viz:
+      layer: primary
+
+# Legacy outputs for backward compatibility (can be removed if not needed)
+scaler_output:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature

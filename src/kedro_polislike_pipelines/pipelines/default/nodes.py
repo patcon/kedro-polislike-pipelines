@@ -2,8 +2,8 @@ from ..builder import build_pipeline_from_params
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from kedro_polis_classic.datasets.polis_api import PolisAPIDataset
-from kedro_polis_classic.utils import ensure_series
+from kedro_polislike_pipelines.datasets.polis_api import PolisAPIDataset
+from kedro_polislike_pipelines.utils import ensure_series
 import logging
 
 logger = logging.getLogger(__name__)
@@ -743,7 +743,7 @@ def save_meta_json(
     # Extract polis_id from URL if provided
     polis_id = None
     if polis_url:
-        from kedro_polis_classic.datasets.polis_api import _parse_polis_url
+        from kedro_polislike_pipelines.datasets.polis_api import _parse_polis_url
 
         try:
             _, polis_id = _parse_polis_url(polis_url)
