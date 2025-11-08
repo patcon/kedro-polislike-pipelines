@@ -14,6 +14,9 @@ def build_pipeline_from_params(params: dict) -> Pipeline:
             estimator_name = step_config.pop("estimator", step_config.pop("name", None))
             if estimator_name is None:
                 raise ValueError(f"No 'estimator' or 'name' field found in {step_name} config")
-            component = EstimatorRegistry.get(estimator_name, **step_config)
+
+            # Filter out parameters starting with underscore (special config keys)
+            estimator_kwargs = {k: v for k, v in step_config.items() if not k.startswith("_")}
+            component = EstimatorRegistry.get(estimator_name, **estimator_kwargs)
             steps.append((step_name, component))
     return Pipeline(steps)

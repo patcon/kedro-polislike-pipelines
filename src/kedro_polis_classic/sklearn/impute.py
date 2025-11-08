@@ -168,7 +168,8 @@ class PaCMAPWithMaskedDistance(BaseEstimator):
     """
 
     def __init__(self, n_neighbors=10, fill_value=0, distance_func=masked_cosine_distance, **pacmap_kwargs):
-        self.n_neighbors = n_neighbors
+        # Handle None value for n_neighbors (use PaCMAP's default of 10)
+        self.n_neighbors = n_neighbors if n_neighbors is not None else 10
         self.fill_value = fill_value
         self.distance_func = distance_func
         self.pacmap_kwargs = pacmap_kwargs

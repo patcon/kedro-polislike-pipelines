@@ -37,7 +37,6 @@ def _extract_input_parameters(params_dict: dict) -> list[str]:
             input_catalog_items.append(catalog_item_name)
     return input_catalog_items
 
-
 def create_pipeline(pipeline_key) -> Pipeline:
     """
     Create an experimental pipeline that includes preprocessing and experimental processing.
@@ -286,11 +285,68 @@ def create_branching_pipeline() -> Pipeline:
     imputers = config.get("imputers", [])
     reducers = config.get("reducers", [])
     clusterers = config.get("clusterers", [])
+    variants = config.get("variants", {})
     enabled_combinations = config.get("enabled_combinations", None)
 
-    # If enabled_combinations is specified, filter to only those combinations
-    if enabled_combinations:
-        valid_combinations = set()
+    # Process variants to determine which combinations to build
+    valid_combinations = set()
+
+    # If variants are specified, use them (takes precedence over enabled_combinations)
+    if variants:
+        for variant_name, variant_config in variants.items():
+            if not variant_config.get("active", False):
+                continue
+
+            # Handle singleton variant (single combination specified with singular keys)
+            if "imputer" in variant_config and "reducer" in variant_config and "clusterer" in variant_config:
+                # Singleton variant: single imputer-reducer-clusterer combination
+                imputer_name = variant_config["imputer"]
+                reducer_name = variant_config["reducer"]
+                clusterer_name = variant_config["clusterer"]
+                custom_name = variant_config.get("name")  # Optional custom name
+
+                # Validate that the config names exist
+                imputer_exists = any(i["name"] == imputer_name for i in imputers)
+                reducer_exists = any(r["name"] == reducer_name for r in reducers)
+                clusterer_exists = any(c["name"] == clusterer_name for c in clusterers)
+
+                if imputer_exists and reducer_exists and clusterer_exists:
+                    # Store combination with optional custom name as 4th element
+                    combination_tuple = (imputer_name, reducer_name, clusterer_name, custom_name)
+                    valid_combinations.add(combination_tuple)
+
+            # Handle list-based variants (multiple combinations from lists)
+            elif "imputers" in variant_config or "reducers" in variant_config or "clusterers" in variant_config:
+                # List variant: Cartesian product of specified lists
+                variant_imputers = variant_config.get("imputers", [i["name"] for i in imputers if i.get("_include_in_full_matrix", True)])
+                variant_reducers = variant_config.get("reducers", [r["name"] for r in reducers if r.get("_include_in_full_matrix", True)])
+                variant_clusterers = variant_config.get("clusterers", [c["name"] for c in clusterers if c.get("_include_in_full_matrix", True)])
+
+                for imputer_name in variant_imputers:
+                    for reducer_name in variant_reducers:
+                        for clusterer_name in variant_clusterers:
+                            imputer_exists = any(i["name"] == imputer_name for i in imputers)
+                            reducer_exists = any(r["name"] == reducer_name for r in reducers)
+                            clusterer_exists = any(c["name"] == clusterer_name for c in clusterers)
+
+                            if imputer_exists and reducer_exists and clusterer_exists:
+                                valid_combinations.add((imputer_name, reducer_name, clusterer_name))
+
+            # Handle full_matrix variant (use all estimators with include_in_full_matrix=true)
+            elif variant_name == "full_matrix":
+                # Build all combinations from estimators that should be included in full matrix
+                full_matrix_imputers = [i for i in imputers if i.get("_include_in_full_matrix", True)]
+                full_matrix_reducers = [r for r in reducers if r.get("_include_in_full_matrix", True)]
+                full_matrix_clusterers = [c for c in clusterers if c.get("_include_in_full_matrix", True)]
+
+                for imputer_config in full_matrix_imputers:
+                    for reducer_config in full_matrix_reducers:
+                        for clusterer_config in full_matrix_clusterers:
+                            # Store combination using config names instead of estimator names
+                            valid_combinations.add((imputer_config["name"], reducer_config["name"], clusterer_config["name"]))
+
+    # Fallback to enabled_combinations if no variants are active
+    elif enabled_combinations:
         for combo in enabled_combinations:
             # Support both 2-tuple (reducer, clusterer) and 3-tuple (imputer, reducer, clusterer)
             if len(combo) == 2:
@@ -300,7 +356,7 @@ def create_branching_pipeline() -> Pipeline:
             else:
                 valid_combinations.add((combo["imputer"], combo["reducer"], combo["clusterer"]))
     else:
-        # Build all combinations
+        # Build all combinations (legacy behavior)
         valid_combinations = None
 
     # Create imputer-reducer-clusterer combinations
@@ -312,7 +368,7 @@ def create_branching_pipeline() -> Pipeline:
         # Check if any combinations are enabled for this imputer
         if valid_combinations:
             imputer_has_enabled_combos = any(
-                combo[0] == imputer_estimator for combo in valid_combinations
+                combo[0] == imputer_name for combo in valid_combinations
             )
             if not imputer_has_enabled_combos:
                 continue
@@ -350,7 +406,7 @@ def create_branching_pipeline() -> Pipeline:
             # Check if any clusterer combinations are enabled for this imputer-reducer pair
             if valid_combinations:
                 pair_has_enabled_combos = any(
-                    combo[0] == imputer_estimator and combo[1] == reducer_estimator
+                    combo[0] == imputer_name and combo[1] == reducer_name
                     for combo in valid_combinations
                 )
                 if not pair_has_enabled_combos:
@@ -406,7 +462,7 @@ def create_branching_pipeline() -> Pipeline:
                     clusterer_estimator = clusterer_config["estimator"]
 
                     # Skip if this combination is not enabled
-                    if valid_combinations and (imputer_estimator, reducer_estimator, clusterer_estimator) not in valid_combinations:
+                    if valid_combinations and (imputer_name, reducer_name, clusterer_name) not in valid_combinations:
                         continue
 
                     combination_key = f"{imputer_name.lower()}_{reducer_name.lower()}_{clusterer_name.lower()}"
@@ -452,14 +508,14 @@ def create_branching_pipeline() -> Pipeline:
                     clusterer_estimator = clusterer_config["estimator"]
 
                     # Skip if this combination is not enabled
-                    if valid_combinations and (imputer_estimator, reducer_estimator, clusterer_estimator) not in valid_combinations:
+                    if valid_combinations and (imputer_name, reducer_name, clusterer_name) not in valid_combinations:
                         continue
 
                     combination_key = f"{imputer_name.lower()}_{reducer_name.lower()}_{clusterer_name.lower()}"
                     filter_combination_tags.append(combination_key)
 
-                # Only create filter if there are enabled combinations that will use it
-                if filter_combination_tags:
+                # Create filter if it's configured (filter_combination_tags will be empty if no combinations use it, but we still need the filter)
+                if filter_config:
                     nodes.append(node(
                         func=create_filter_wrapper(filter_config, required_catalog_inputs),
                         inputs=inputs,
@@ -477,11 +533,30 @@ def create_branching_pipeline() -> Pipeline:
             for k, clusterer_config in enumerate(clusterers):
                 clusterer_name = clusterer_config["name"]
                 clusterer_estimator = clusterer_config["estimator"]
-                combination_key = f"{imputer_name.lower()}_{reducer_name.lower()}_{clusterer_name.lower()}"
 
-                # Skip if this combination is not enabled
-                if valid_combinations and (imputer_estimator, reducer_estimator, clusterer_estimator) not in valid_combinations:
-                    continue
+                # Check for custom name in valid_combinations (4-tuple format)
+                custom_name = None
+                combination_found = False
+                if valid_combinations:
+                    for combo in valid_combinations:
+                        if len(combo) == 4:  # 4-tuple with custom name
+                            if combo[0] == imputer_name and combo[1] == reducer_name and combo[2] == clusterer_name:
+                                custom_name = combo[3]
+                                combination_found = True
+                                break
+                        elif len(combo) == 3:  # 3-tuple without custom name
+                            if combo[0] == imputer_name and combo[1] == reducer_name and combo[2] == clusterer_name:
+                                combination_found = True
+                                break
+
+                    if not combination_found:
+                        continue
+
+                # Use custom name if provided, otherwise generate default name
+                if custom_name:
+                    combination_key = custom_name
+                else:
+                    combination_key = f"{imputer_name.lower()}_{reducer_name.lower()}_{clusterer_name.lower()}"
 
                 combination_tags = [
                     combination_key,

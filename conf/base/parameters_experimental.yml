@@ -286,6 +286,7 @@ branching_pipeline:
     - name: mode
       estimator: SimpleImputer
       strategy: most_frequent
+      _include_in_full_matrix: false  # Exclude from full matrix but available for variants
     - name: knn5d
       estimator: KNNImputer
       n_neighbors: 5
@@ -302,6 +303,9 @@ branching_pipeline:
       estimator: KNNImputer
       n_neighbors: 10
       weights: uniform
+    - name: noop
+      estimator: NoOpTransformer
+      _include_in_full_matrix: false  # Special imputer for raw data analysis
 
   reducers:
     - name: pca
@@ -316,6 +320,14 @@ branching_pipeline:
       n_components: 2
       n_neighbors: null
       random_state: ${globals:random_state}
+      _scaler:
+        estimator: NoOpTransformer
+    - name: pacmap_masked
+      estimator: PaCMAPWithMaskedDistance
+      n_components: 2
+      n_neighbors: null
+      random_state: ${globals:random_state}
+      _include_in_full_matrix: false  # Special variant for raw data analysis
       _scaler:
         estimator: NoOpTransformer
     - name: localmap
@@ -350,20 +362,18 @@ branching_pipeline:
       estimator: HDBSCAN
       cluster_selection_method: leaf
 
-  # Optional: specify which combinations to build (if not specified, builds all combinations)
-  # New format supports imputer-reducer-clusterer combinations:
-  # enabled_combinations:
-  #   - imputer: SimpleImputer
-  #     reducer: PCA
-  #     clusterer: BestKMeans
-  #   - imputer: SimpleImputer
-  #     reducer: PaCMAP
-  #     clusterer: BestKMeans
-  #   - imputer: KNNImputer
-  #     reducer: UMAP
-  #     clusterer: BestHDBSCANFlat
-  #
-  # Legacy 2-tuple format is still supported for backward compatibility:
-  # enabled_combinations:
-  #   - reducer: PCA
-  #     clusterer: BestKMeans
+  # Variants allow you to define named subsets of the pipeline matrix
+  # Each variant can override or constrain parts of the matrix
+  variants:
+    full_matrix:
+      description: "Full matrix expansion (all combinations with include_in_full_matrix=true)"
+      active: true
+      # When no specific imputers/reducers/clusterers are defined, uses all from global lists
+      # that have include_in_full_matrix=true (or unspecified, which defaults to true)
+
+    zero_pacmap_masked_bestkmeans:
+      name: zero_pacmap_masked_bestkmeans
+      active: true
+      imputer: noop           # zero imputation happens within the custom PaCMAP estimator
+      reducer: pacmap_masked  # PaCMAP with masked distance
+      clusterer: bestkmeans   # simple clustering
