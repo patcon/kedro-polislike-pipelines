@@ -41,9 +41,7 @@ jobs:
 
       - name: Build static site
         run: |
-          uv run make build
-        env:
-          POLIS_URL: ${{ env.KEDRO_POLIS_URL }}
+          uv run make build-viz POLIS_URL="$KEDRO_POLIS_URL"
 
       - name: Upload static files as artifact
         uses: actions/upload-pages-artifact@v3
