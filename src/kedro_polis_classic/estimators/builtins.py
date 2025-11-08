@@ -20,6 +20,24 @@ def knn_imputer_factory(**kwargs):
     return KNNImputer(**kwargs)
 
 
+@EstimatorRegistry.register("CenteredZeroImputer")
+def centered_zero_imputer_factory(**kwargs):
+    from ..sklearn.impute import CenteredZeroImputer
+
+    defaults: dict = dict()
+    defaults.update(kwargs)
+    return CenteredZeroImputer(**defaults)
+
+
+@EstimatorRegistry.register("PaCMAPWithMaskedDistance")
+def pacmap_with_masked_distance_factory(**kwargs):
+    from ..sklearn.impute import PaCMAPWithMaskedDistance
+
+    defaults: dict = dict()
+    defaults.update(kwargs)
+    return PaCMAPWithMaskedDistance(**defaults)
+
+
 # Reducers
 @EstimatorRegistry.register("PCA")
 def pca_reducer_factory(**kwargs):
