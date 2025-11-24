@@ -321,9 +321,9 @@ def _create_scatter_plot(
         # Update axis labels
         fig.update_layout(
             scene=dict(
-                xaxis_title=f"{str(x_col).upper()} Component",
-                yaxis_title=f"{str(y_col).upper()} Component",
-                zaxis_title=f"{str(z_col).upper()} Component",
+                xaxis_title=f"{str(x_col).upper()}",
+                yaxis_title=f"{str(y_col).upper()}",
+                zaxis_title=f"{str(z_col).upper()}",
             ),
             width=800,
             height=600,
@@ -360,8 +360,8 @@ def _create_scatter_plot(
 
         # Update axis labels and layout
         fig.update_layout(
-            xaxis_title=f"{str(x_col).upper()} Component",
-            yaxis_title=f"{str(y_col).upper()} Component",
+            xaxis_title=f"{str(x_col).upper()}",
+            yaxis_title=f"{str(y_col).upper()}",
             width=800,
             height=600,
             plot_bgcolor="white",
@@ -408,10 +408,7 @@ def create_scatter_plot(
     if isinstance(filter_output, np.ndarray):
         # Create generic column names based on dimensions
         n_components = filter_output.shape[1] if len(filter_output.shape) > 1 else 1
-        if n_components <= 3:
-            column_names = ["x", "y", "z"][:n_components]
-        else:
-            column_names = [f"PC{i + 1}" for i in range(n_components)]
+        column_names = [f"comp{i + 1}" for i in range(n_components)]
 
         # Create DataFrame with actual participant IDs as index
         data = pd.DataFrame(
@@ -423,6 +420,10 @@ def create_scatter_plot(
         # Already a DataFrame, but ensure it has the correct index
         data = filter_output.copy()
         data.index = included_participant_ids
+
+    # For plotting, only use the first 2 components (even if more are available)
+    if len(data.columns) > 2:
+        data = data.iloc[:, :2]
 
     # Convert cluster labels to pandas Series of strings for categorical coloring
     # Make sure the cluster labels have the same index as the data DataFrame
@@ -488,10 +489,7 @@ def create_scatter_plot_by_participant_id(
     if isinstance(filter_output, np.ndarray):
         # Create generic column names based on dimensions
         n_components = filter_output.shape[1] if len(filter_output.shape) > 1 else 1
-        if n_components <= 3:
-            column_names = ["x", "y", "z"][:n_components]
-        else:
-            column_names = [f"PC{i + 1}" for i in range(n_components)]
+        column_names = [f"comp{i + 1}" for i in range(n_components)]
 
         # Create DataFrame with actual participant IDs as index
         data = pd.DataFrame(
@@ -503,6 +501,10 @@ def create_scatter_plot_by_participant_id(
         # Already a DataFrame, but ensure it has the correct index
         data = filter_output.copy()
         data.index = included_participant_ids
+
+    # For plotting, only use the first 2 components (even if more are available)
+    if len(data.columns) > 2:
+        data = data.iloc[:, :2]
 
     # Get participant IDs as numeric values for continuous color scale
     participant_ids = pd.Series(data.index, index=data.index)
@@ -552,10 +554,7 @@ def create_scatter_plot_by_vote_proportions(
     if isinstance(filter_output, np.ndarray):
         # Create generic column names based on dimensions
         n_components = filter_output.shape[1] if len(filter_output.shape) > 1 else 1
-        if n_components <= 3:
-            column_names = ["x", "y", "z"][:n_components]
-        else:
-            column_names = [f"PC{i + 1}" for i in range(n_components)]
+        column_names = [f"comp{i + 1}" for i in range(n_components)]
 
         # Create DataFrame with actual participant IDs as index
         data = pd.DataFrame(
@@ -567,6 +566,10 @@ def create_scatter_plot_by_vote_proportions(
         # Already a DataFrame, but ensure it has the correct index
         data = filter_output.copy()
         data.index = included_participant_ids
+
+    # For plotting, only use the first 2 components (even if more are available)
+    if len(data.columns) > 2:
+        data = data.iloc[:, :2]
 
     # Calculate total number of votes cast by each included participant
     # Vote values: 1 = agree, -1 = disagree, 0 = pass, NaN = no vote
@@ -689,11 +692,8 @@ def save_projections_json(
         # If it's a DataFrame, get the values
         X_clustered = filter_output.values
 
-    # Ensure we have 2D coordinates (take first 2 dimensions if more)
-    if X_clustered.shape[1] > 2:
-        X_clustered = X_clustered[:, :2]
-
-    # Create the format: [[participant_id, [x, y]], ...]
+    # Save all components to disk (don't truncate to 2D)
+    # Create the format: [[participant_id, [comp1, comp2, comp3, ...]], ...]
     X_with_ids = []
     for i, participant_id in enumerate(included_participant_ids):
         coords = X_clustered[i].tolist()

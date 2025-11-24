@@ -145,9 +145,9 @@ def _create_scatter_plot(
         fig.update_layout(
             title=title,
             scene=dict(
-                xaxis_title=f"{x_col.upper()} Component",
-                yaxis_title=f"{y_col.upper()} Component",
-                zaxis_title=f"{z_col.upper()} Component",
+                xaxis_title=f"{str(x_col).upper()}",
+                yaxis_title=f"{str(y_col).upper()}",
+                zaxis_title=f"{str(z_col).upper()}",
             ),
             width=800,
             height=600,
@@ -174,8 +174,8 @@ def _create_scatter_plot(
 
         fig.update_layout(
             title=title,
-            xaxis_title=f"{x_col.upper()} Component",
-            yaxis_title=f"{y_col.upper()} Component",
+            xaxis_title=f"{str(x_col).upper()}",
+            yaxis_title=f"{str(y_col).upper()}",
             width=800,
             height=600,
             plot_bgcolor="white",
@@ -289,11 +289,7 @@ def reduce_with_pca(
     components = pca.fit_transform(imputed_vote_matrix)
 
     # Create column names based on number of components
-    DIMENSION_COLS = ["x", "y", "z"]
-    if n_components <= 3:
-        column_names = DIMENSION_COLS[:n_components]
-    else:
-        column_names = [f"PC{i + 1}" for i in range(n_components)]
+    column_names = [f"comp{i + 1}" for i in range(n_components)]
 
     return pd.DataFrame(
         components, index=imputed_vote_matrix.index, columns=pd.Index(column_names)

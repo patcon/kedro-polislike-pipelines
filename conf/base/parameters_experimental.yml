@@ -28,7 +28,7 @@ pipelines:
 
     reducer:
       name: PCA
-      n_components: 2
+      n_components: 10
 
     scaler:
       name: SparsityAwareScaler
@@ -198,7 +198,7 @@ pipelines:
   #   <<: *knn5d_pacmap_besthdbscanflat
   #   reducer:
   #     name: PCA
-  #     n_components: 2
+  #     n_components: 10
   #     random_state: ${globals:random_state}
 
   knn5d_pacmap_bestkmeans: &knn5d_pacmap_bestkmeans
@@ -236,7 +236,7 @@ pipelines:
     <<: *knn5d_pacmap_bestkmeans
     reducer:
       name: PCA
-      n_components: 2
+      n_components: 10
       random_state: ${globals:random_state}
 
   mean_umap_bestkmeans:
