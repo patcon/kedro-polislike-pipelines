@@ -34,4 +34,4 @@ source_dir = "src"
 project_id = "2f7648433d654496b56766f9dafd9f85"
 
 [tool.uv.sources]
-red-dwarf = { git = "http://github.com/polis-community/red-dwarf.git", rev = "algo-registries" }
+red-dwarf = { git = "http://github.com/polis-community/red-dwarf.git", rev = "main" }
