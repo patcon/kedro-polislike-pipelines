@@ -969,7 +969,7 @@ requires-dist = [
     { name = "kedro-datasets", extras = ["pandas"], specifier = ">=4.1.0" },
     { name = "kedro-viz", specifier = ">=12.0.0" },
     { name = "pacmap" },
-    { name = "red-dwarf", git = "http://github.com/polis-community/red-dwarf.git?rev=main" },
+    { name = "red-dwarf", git = "http://github.com/polis-community/red-dwarf.git?rev=merge-kedro-progress" },
     { name = "scikit-learn", specifier = ">=1.6.1" },
     { name = "umap-learn", specifier = ">=0.5.9.post2" },
 ]
@@ -2151,7 +2151,7 @@ wheels = [
 [[package]]
 name = "red-dwarf"
 version = "0.3.0"
-source = { git = "http://github.com/polis-community/red-dwarf.git?rev=main#2c3d11aa58ed686006b83347526b65fd35a616af" }
+source = { git = "http://github.com/polis-community/red-dwarf.git?rev=merge-kedro-progress#1478053c8b9bc5ecfc923ea4db4bcd8b1acbf3c5" }
 dependencies = [
     { name = "fake-useragent" },
     { name = "pandas" },

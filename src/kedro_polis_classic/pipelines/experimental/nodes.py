@@ -82,19 +82,6 @@ def split_raw_data(raw_data: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
     return raw_data["votes"], raw_data["comments"]
 
 
-def dedup_votes(raw_votes: pd.DataFrame) -> pd.DataFrame:
-    """Remove duplicate votes, keeping the most recent"""
-    # Sort so newest votes are last
-    votes_sorted = raw_votes.sort_values("modified")
-
-    # Drop duplicates, keeping the most recent
-    deduped_votes = votes_sorted.drop_duplicates(
-        subset=["participant_id", "statement_id"], keep="last"
-    )
-
-    return deduped_votes
-
-
 def make_raw_vote_matrix(deduped_votes: pd.DataFrame) -> pd.DataFrame:
     """Create vote matrix from deduplicated votes"""
     matrix = deduped_votes.pivot(

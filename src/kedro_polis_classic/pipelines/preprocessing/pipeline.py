@@ -1,8 +1,8 @@
 from kedro.pipeline import Pipeline, node
+from reddwarf.utils.matrix import deduplicate_votes
 from ..experimental.nodes import (
     load_polis_data,
     split_raw_data,
-    dedup_votes,
     make_raw_vote_matrix,
     make_participant_mask,
     make_statement_mask,
@@ -40,9 +40,9 @@ def create_pipeline() -> Pipeline:
             name="split_raw_data",
         ),
         node(
-            func=dedup_votes,
+            func=deduplicate_votes,
             inputs="raw_votes",
-            outputs="deduped_votes",
+            outputs=["deduped_votes", "_duplicates"],
             name="dedup_votes",
         ),
         node(
