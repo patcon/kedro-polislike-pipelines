@@ -69,16 +69,13 @@ def load_polis_data(
     base_url: str | None = None,
     polis_url: str | None = None,
     import_dir: str | None = None,
-):
-    """Load raw data from Polis API or local directory"""
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Load raw votes and comments from Polis API or local directory"""
     dataset = PolisAPIDataset(
         base_url=base_url, polis_url=polis_url, import_dir=import_dir
     )
-    return dataset.load()
+    raw_data = dataset.load()
 
-
-def split_raw_data(raw_data: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Split raw data into votes and comments"""
     return raw_data["votes"], raw_data["comments"]
 
 
