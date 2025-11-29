@@ -2151,7 +2151,7 @@ wheels = [
 [[package]]
 name = "red-dwarf"
 version = "0.3.0"
-source = { git = "http://github.com/polis-community/red-dwarf.git?rev=merge-kedro-progress#1478053c8b9bc5ecfc923ea4db4bcd8b1acbf3c5" }
+source = { git = "http://github.com/polis-community/red-dwarf.git?rev=merge-kedro-progress#b09c627788536d3e49b3775a64a9e316b6cde7d3" }
 dependencies = [
     { name = "fake-useragent" },
     { name = "pandas" },
